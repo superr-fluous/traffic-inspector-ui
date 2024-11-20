@@ -208,3 +208,9 @@ void run_afpacket_loop(afpacket_t *handle, packet_handler callback, uint8_t *use
         current_block_num = (current_block_num + 1) % blocknum;
     }
 }
+
+void afpacket_close(afpacket_t *handle) {
+    close(handle->socket_fd);
+    free(handle->io);
+    free(handle);
+}

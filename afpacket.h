@@ -25,4 +25,6 @@ afpacket_t* open_afpacket_socket(const char *name_of_device, int fanout_group_id
 
 void run_afpacket_loop(afpacket_t *handle, packet_handler callback, uint8_t *user_data);
 
+void afpacket_close(afpacket_t *handle);
+
 #endif	/* __AFPACKET_H__ */
