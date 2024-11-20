@@ -1,0 +1,3 @@
+[submodule "libndpi"]
+	path = libndpi
+	url = https://github.com/ntop/nDPI.git
