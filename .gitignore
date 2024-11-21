@@ -2,3 +2,4 @@
 test.cc
 *.o
 test
+test_conf.ini

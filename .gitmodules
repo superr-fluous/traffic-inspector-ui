@@ -1,3 +1,6 @@
 [submodule "libndpi"]
 	path = libndpi
 	url = https://github.com/ntop/nDPI.git
+[submodule "inih"]
+	path = inih
+	url = https://github.com/benhoyt/inih.git
