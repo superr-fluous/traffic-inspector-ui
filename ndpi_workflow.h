@@ -16,12 +16,13 @@
 #define INITIAL_THREAD_HASH 0x03dd018b
 
 typedef struct {
-    afpacket_t *handle;
+  afpacket_t* handle;
   ndpi_serializer json_serializer;
   uint64_t packets_captured;
   uint64_t packets_processed;
   uint64_t total_l4_data_len;
   uint64_t detected_flow_protocols;
+  uint8_t number_of_threads;
 
   uint64_t last_idle_scan_time;
   uint64_t last_time;
@@ -40,12 +41,16 @@ typedef struct {
 } ndpi_workflow_t;
 
 typedef struct {
-  ndpi_workflow_t * workflow;
+  ndpi_workflow_t* workflow;
   pthread_t thread_id;
   uint32_t array_index;
 } ndpi_work_thread_t;
 
-ndpi_workflow_t * init_workflow(const char* name_of_device, int fanout_group_id);
-void free_workflow(ndpi_workflow_t ** const workflow);
+ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id,
+                               uint8_t number_of_threads);
+void free_workflow(ndpi_workflow_t** const workflow);
+void ndpi_process_packet(uint8_t* const args,
+                         struct afpacket_pkthdr const* const header,
+                         uint8_t const* const packet);
 
 #endif /* __NDPI_WORKFLOW_H__ */

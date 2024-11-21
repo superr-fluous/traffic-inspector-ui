@@ -48,8 +48,10 @@ static int __get_interface_by_device_name(int socket_fd,
 static int __set_promisc_mode(int socket_fd, int interface_number) {
   struct packet_mreq sock_params;
   memset(&sock_params, 0, sizeof(sock_params));
-  sock_params.mr_type = PACKET_MR_PROMISC;
-  sock_params.mr_ifindex = interface_number;
+  sock_params = {
+    .mr_type = PACKET_MR_PROMISC,
+    .mr_ifindex = interface_number
+  };
 
   return setsockopt(socket_fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
                     (void *)&sock_params, sizeof(sock_params));
@@ -60,13 +62,14 @@ static struct iovec *__setup_rx_ring(int socket_fd,
   struct tpacket_req3 req;
   memset(&req, 0, sizeof(req));
 
-  req.tp_block_size = blocksiz;
-  req.tp_frame_size = framesiz;
-  req.tp_block_nr = blocknum;
-  req.tp_frame_nr = (blocksiz * blocknum) / framesiz;
-
-  req.tp_retire_blk_tov = 60;
-  req.tp_feature_req_word = TP_FT_REQ_FILL_RXHASH;
+  req = {
+    .tp_block_size = blocksiz,
+    .tp_frame_size = framesiz,
+    .tp_block_nr = blocknum,
+    .tp_frame_nr = (blocksiz * blocknum) / framesiz,
+    .tp_retire_blk_tov = 60,
+    .tp_feature_req_word = TP_FT_REQ_FILL_RXHASH
+  };
 
   if (setsockopt(socket_fd, SOL_PACKET, PACKET_RX_RING, (void *)&req,
                  sizeof(req)) == -1) {
@@ -149,9 +152,11 @@ afpacket_t *open_afpacket_socket(const char *name_of_device,
   struct sockaddr_ll bind_address;
   memset(&bind_address, 0, sizeof(bind_address));
 
-  bind_address.sll_family = AF_PACKET;
-  bind_address.sll_protocol = htons(ETH_P_ALL);
-  bind_address.sll_ifindex = interface_number;
+  bind_address = {
+    .sll_family = AF_PACKET,
+    .sll_protocol = htons(ETH_P_ALL),
+    .sll_ifindex = interface_number
+  };
 
   if ((handle->io = __setup_rx_ring(handle->socket_fd, &bind_address)) ==
       NULL) {
@@ -179,10 +184,13 @@ static void __process_block(struct block_desc *pbd, const int block_num,
   for (i = 0; i < num_pkts; ++i) {
     struct afpacket_pkthdr packet_header;
     memset(&packet_header, 0, sizeof(packet_header));
-    packet_header.len = ppd->tp_snaplen;
-    packet_header.caplen = ppd->tp_snaplen;
-    packet_header.ts.tv_sec = ppd->tp_sec;
-    packet_header.ts.tv_usec = ppd->tp_nsec / 1000;
+
+    packet_header = {
+      .len = ppd->tp_snaplen,
+      .caplen = ppd->tp_snaplen,
+      .ts.tv_sec = ppd->tp_sec,
+      .ts.tv_usec = ppd->tp_nsec / 1000
+    };
 
     uint8_t *data_pointer = ((uint8_t *)ppd + ppd->tp_mac);
 
@@ -203,9 +211,11 @@ void run_afpacket_loop(afpacket_t *handle, packet_handler callback,
   struct pollfd pfd;
   memset(&pfd, 0, sizeof(pfd));
 
-  pfd.fd = handle->socket_fd;
-  pfd.events = POLLIN | POLLERR;
-  pfd.revents = 0;
+  pfd = {
+    .fd = handle->socket_fd,
+    .events = POLLIN | POLLERR,
+    .revents = 0
+  };
 
   while (true) {
     struct block_desc *pbd =
