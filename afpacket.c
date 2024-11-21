@@ -28,7 +28,7 @@ static const uint32_t framesiz = 1 << 11;
 static const uint32_t blocknum = 64;
 
 static int __get_interface_by_device_name(int socket_fd,
-                                          const char *name_of_device) {
+					  const char *name_of_device) {
   struct ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
 
@@ -48,31 +48,26 @@ static int __get_interface_by_device_name(int socket_fd,
 static int __set_promisc_mode(int socket_fd, int interface_number) {
   struct packet_mreq sock_params;
   memset(&sock_params, 0, sizeof(sock_params));
-  sock_params = {
-    .mr_type = PACKET_MR_PROMISC,
-    .mr_ifindex = interface_number
-  };
+  sock_params = {.mr_type = PACKET_MR_PROMISC, .mr_ifindex = interface_number};
 
   return setsockopt(socket_fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-                    (void *)&sock_params, sizeof(sock_params));
+		    (void *)&sock_params, sizeof(sock_params));
 }
 
 static struct iovec *__setup_rx_ring(int socket_fd,
-                                     struct sockaddr_ll *bind_address) {
+				     struct sockaddr_ll *bind_address) {
   struct tpacket_req3 req;
   memset(&req, 0, sizeof(req));
 
-  req = {
-    .tp_block_size = blocksiz,
-    .tp_frame_size = framesiz,
-    .tp_block_nr = blocknum,
-    .tp_frame_nr = (blocksiz * blocknum) / framesiz,
-    .tp_retire_blk_tov = 60,
-    .tp_feature_req_word = TP_FT_REQ_FILL_RXHASH
-  };
+  req = {.tp_block_size = blocksiz,
+	 .tp_frame_size = framesiz,
+	 .tp_block_nr = blocknum,
+	 .tp_frame_nr = (blocksiz * blocknum) / framesiz,
+	 .tp_retire_blk_tov = 60,
+	 .tp_feature_req_word = TP_FT_REQ_FILL_RXHASH};
 
   if (setsockopt(socket_fd, SOL_PACKET, PACKET_RX_RING, (void *)&req,
-                 sizeof(req)) == -1) {
+		 sizeof(req)) == -1) {
     return NULL;
   }
 
@@ -80,8 +75,8 @@ static struct iovec *__setup_rx_ring(int socket_fd,
   struct iovec *io = NULL;
 
   if ((mapped_buffer = (uint8_t *)mmap(
-           NULL, req.tp_block_size * req.tp_block_nr, PROT_READ | PROT_WRITE,
-           MAP_SHARED | MAP_LOCKED, socket_fd, 0)) == MAP_FAILED) {
+	   NULL, req.tp_block_size * req.tp_block_nr, PROT_READ | PROT_WRITE,
+	   MAP_SHARED | MAP_LOCKED, socket_fd, 0)) == MAP_FAILED) {
     return NULL;
   }
 
@@ -93,7 +88,7 @@ static struct iovec *__setup_rx_ring(int socket_fd,
   }
 
   if (bind(socket_fd, (struct sockaddr *)bind_address,
-           sizeof(struct sockaddr_ll)) == -1) {
+	   sizeof(struct sockaddr_ll)) == -1) {
     free(io);
     return NULL;
   }
@@ -103,14 +98,14 @@ static struct iovec *__setup_rx_ring(int socket_fd,
 static int __setup_fanout_group(int socket_fd, int fanout_group_id) {
   int fanout_arg = (fanout_group_id | (PACKET_FANOUT_TYPE << 16));
   if (setsockopt(socket_fd, SOL_PACKET, PACKET_FANOUT, &fanout_arg,
-                 sizeof(fanout_arg))) {
+		 sizeof(fanout_arg))) {
     return -1;
   }
   return 0;
 }
 
 afpacket_t *open_afpacket_socket(const char *name_of_device,
-                                 int fanout_group_id) {
+				 int fanout_group_id) {
   afpacket_t *handle = NULL;
 
   if ((handle = (afpacket_t *)malloc(sizeof(afpacket_t))) == NULL) {
@@ -128,7 +123,7 @@ afpacket_t *open_afpacket_socket(const char *name_of_device,
   }
 
   if (setsockopt(handle->socket_fd, SOL_PACKET, PACKET_VERSION,
-                 &TPACKET_VERSION, sizeof(TPACKET_VERSION)) == -1) {
+		 &TPACKET_VERSION, sizeof(TPACKET_VERSION)) == -1) {
     close(handle->socket_fd);
     free(handle);
     return NULL;
@@ -152,11 +147,9 @@ afpacket_t *open_afpacket_socket(const char *name_of_device,
   struct sockaddr_ll bind_address;
   memset(&bind_address, 0, sizeof(bind_address));
 
-  bind_address = {
-    .sll_family = AF_PACKET,
-    .sll_protocol = htons(ETH_P_ALL),
-    .sll_ifindex = interface_number
-  };
+  bind_address = {.sll_family = AF_PACKET,
+		  .sll_protocol = htons(ETH_P_ALL),
+		  .sll_ifindex = interface_number};
 
   if ((handle->io = __setup_rx_ring(handle->socket_fd, &bind_address)) ==
       NULL) {
@@ -175,7 +168,7 @@ afpacket_t *open_afpacket_socket(const char *name_of_device,
 }
 
 static void __process_block(struct block_desc *pbd, const int block_num,
-                            packet_handler callback, uint8_t *user_data) {
+			    packet_handler callback, uint8_t *user_data) {
   int num_pkts = pbd->header.num_pkts, i;
   struct tpacket3_hdr *ppd;
 
@@ -185,12 +178,10 @@ static void __process_block(struct block_desc *pbd, const int block_num,
     struct afpacket_pkthdr packet_header;
     memset(&packet_header, 0, sizeof(packet_header));
 
-    packet_header = {
-      .len = ppd->tp_snaplen,
-      .caplen = ppd->tp_snaplen,
-      .ts.tv_sec = ppd->tp_sec,
-      .ts.tv_usec = ppd->tp_nsec / 1000
-    };
+    packet_header = {.len = ppd->tp_snaplen,
+		     .caplen = ppd->tp_snaplen,
+		     .ts.tv_sec = ppd->tp_sec,
+		     .ts.tv_usec = ppd->tp_nsec / 1000};
 
     uint8_t *data_pointer = ((uint8_t *)ppd + ppd->tp_mac);
 
@@ -205,21 +196,17 @@ static void __flush_block(struct block_desc *pbd) {
 }
 
 void run_afpacket_loop(afpacket_t *handle, packet_handler callback,
-                       uint8_t *user_data) {
+		       uint8_t *user_data) {
   uint32_t current_block_num = 0;
 
   struct pollfd pfd;
   memset(&pfd, 0, sizeof(pfd));
 
-  pfd = {
-    .fd = handle->socket_fd,
-    .events = POLLIN | POLLERR,
-    .revents = 0
-  };
+  pfd = {.fd = handle->socket_fd, .events = POLLIN | POLLERR, .revents = 0};
 
   while (true) {
     struct block_desc *pbd =
-        (struct block_desc *)handle->io[current_block_num].iov_base;
+	(struct block_desc *)handle->io[current_block_num].iov_base;
 
     if ((pbd->header.block_status & TP_STATUS_USER) == 0) {
       poll(&pfd, 1, -1);

@@ -45,23 +45,23 @@ typedef struct {
   struct ndpi_flow_struct *ndpi_flow;
 } ndpi_flow_info_t;
 
-ndpi_workflow_t *init_workflow(const char *name_of_device,
-                               int fanout_group_id, uint8_t number_of_threads) {
+ndpi_workflow_t *init_workflow(const char *name_of_device, int fanout_group_id,
+			       uint8_t number_of_threads) {
   ndpi_workflow_t *workflow = NULL;
   if (!(workflow =
-            (ndpi_workflow_t *)ndpi_calloc(1, sizeof(ndpi_workflow_t)))) {
+	    (ndpi_workflow_t *)ndpi_calloc(1, sizeof(ndpi_workflow_t)))) {
     return NULL;
   }
 
   workflow->number_of_threads = number_of_threads;
 
-  if(!(workflow->handle = open_afpacket_socket(name_of_device, fanout_group_id))) {
+  if (!(workflow->handle =
+	    open_afpacket_socket(name_of_device, fanout_group_id))) {
     free_workflow(&workflow);
     return NULL;
   }
 
   if (!(workflow->ndpi_struct = ndpi_init_detection_module(NULL))) {
-
     free_workflow(&workflow);
     return NULL;
   }
@@ -69,7 +69,7 @@ ndpi_workflow_t *init_workflow(const char *name_of_device,
   workflow->total_active_flows = 0;
   workflow->max_active_flows = MAX_FLOW_ROOTS_PER_THREAD;
   if (!(workflow->ndpi_flows_active =
-            (void **)ndpi_calloc(workflow->max_active_flows, sizeof(void *)))) {
+	    (void **)ndpi_calloc(workflow->max_active_flows, sizeof(void *)))) {
     free_workflow(&workflow);
     return NULL;
   }
@@ -77,13 +77,13 @@ ndpi_workflow_t *init_workflow(const char *name_of_device,
   workflow->total_idle_flows = 0;
   workflow->max_idle_flows = MAX_IDLE_FLOWS_PER_THREAD;
   if (!(workflow->ndpi_flows_idle =
-            (void **)ndpi_calloc(workflow->max_idle_flows, sizeof(void *)))) {
+	    (void **)ndpi_calloc(workflow->max_idle_flows, sizeof(void *)))) {
     free_workflow(&workflow);
     return NULL;
   }
 
   if (ndpi_init_serializer(&workflow->json_serializer,
-                           ndpi_serialization_format_json) == -1) {
+			   ndpi_serialization_format_json) == -1) {
     free_workflow(&workflow);
     return NULL;
   }
@@ -133,28 +133,28 @@ void free_workflow(ndpi_workflow_t **const workflow) {
 }
 
 static int __ip_tuple_to_string(ndpi_flow_info_t const *const flow,
-                                char *const src_addr_str, size_t src_addr_len,
-                                char *const dst_addr_str, size_t dst_addr_len) {
+				char *const src_addr_str, size_t src_addr_len,
+				char *const dst_addr_str, size_t dst_addr_len) {
   switch (flow->l3_type) {
     case IPv4:
       return inet_ntop(AF_INET, (struct sockaddr_in *)&flow->ip_tuple.v4.src,
-                       src_addr_str, src_addr_len) != NULL &&
-             inet_ntop(AF_INET, (struct sockaddr_in *)&flow->ip_tuple.v4.dst,
-                       dst_addr_str, dst_addr_len) != NULL;
+		       src_addr_str, src_addr_len) != NULL &&
+	     inet_ntop(AF_INET, (struct sockaddr_in *)&flow->ip_tuple.v4.dst,
+		       dst_addr_str, dst_addr_len) != NULL;
     case IPv6:
       return inet_ntop(AF_INET6,
-                       (struct sockaddr_in6 *)&flow->ip_tuple.v6.src[0],
-                       src_addr_str, src_addr_len) != NULL &&
-             inet_ntop(AF_INET6,
-                       (struct sockaddr_in6 *)&flow->ip_tuple.v6.dst[0],
-                       dst_addr_str, dst_addr_len) != NULL;
+		       (struct sockaddr_in6 *)&flow->ip_tuple.v6.src[0],
+		       src_addr_str, src_addr_len) != NULL &&
+	     inet_ntop(AF_INET6,
+		       (struct sockaddr_in6 *)&flow->ip_tuple.v6.dst[0],
+		       dst_addr_str, dst_addr_len) != NULL;
   }
 
   return 0;
 }
 
 static int __ip_tuples_compare(ndpi_flow_info_t const *const A,
-                               ndpi_flow_info_t const *const B) {
+			       ndpi_flow_info_t const *const B) {
   // generate a warning if the enum changes
   switch (A->l3_type) {
     case IPv4:
@@ -177,19 +177,19 @@ static int __ip_tuples_compare(ndpi_flow_info_t const *const A,
     }
   } else if (A->l3_type == IPv6 && B->l3_type == IPv6) {
     if (A->ip_tuple.v6.src[0] < B->ip_tuple.v6.src[0] &&
-        A->ip_tuple.v6.src[1] < B->ip_tuple.v6.src[1]) {
+	A->ip_tuple.v6.src[1] < B->ip_tuple.v6.src[1]) {
       return -1;
     }
     if (A->ip_tuple.v6.src[0] > B->ip_tuple.v6.src[0] &&
-        A->ip_tuple.v6.src[1] > B->ip_tuple.v6.src[1]) {
+	A->ip_tuple.v6.src[1] > B->ip_tuple.v6.src[1]) {
       return 1;
     }
     if (A->ip_tuple.v6.dst[0] < B->ip_tuple.v6.dst[0] &&
-        A->ip_tuple.v6.dst[1] < B->ip_tuple.v6.dst[1]) {
+	A->ip_tuple.v6.dst[1] < B->ip_tuple.v6.dst[1]) {
       return -1;
     }
     if (A->ip_tuple.v6.dst[0] > B->ip_tuple.v6.dst[0] &&
-        A->ip_tuple.v6.dst[1] > B->ip_tuple.v6.dst[1]) {
+	A->ip_tuple.v6.dst[1] > B->ip_tuple.v6.dst[1]) {
       return 1;
     }
   }
@@ -211,7 +211,7 @@ static int __ip_tuples_compare(ndpi_flow_info_t const *const A,
 }
 
 static void __ndpi_idle_scan_walker(void const *const A, ndpi_VISIT which,
-                                    int deep, void *const user_data) {
+				    int deep, void *const user_data) {
   ndpi_workflow_t *const workflow = (ndpi_workflow_t *)user_data;
   ndpi_flow_info_t *const flow = *(ndpi_flow_info_t **)A;
 
@@ -227,11 +227,11 @@ static void __ndpi_idle_scan_walker(void const *const A, ndpi_VISIT which,
 
   if (which == ndpi_preorder || which == ndpi_leaf) {
     if ((flow->flow_fin_ack_seen == 1 && flow->flow_ack_seen == 1) ||
-        flow->last_seen + MAX_IDLE_TIME < workflow->last_time) {
+	flow->last_seen + MAX_IDLE_TIME < workflow->last_time) {
       char src_addr_str[INET6_ADDRSTRLEN + 1];
       char dst_addr_str[INET6_ADDRSTRLEN + 1];
       __ip_tuple_to_string(flow, src_addr_str, sizeof(src_addr_str),
-                           dst_addr_str, sizeof(dst_addr_str));
+			   dst_addr_str, sizeof(dst_addr_str));
       workflow->ndpi_flows_idle[workflow->cur_idle_flows++] = flow;
       workflow->total_idle_flows++;
     }
@@ -263,18 +263,18 @@ static void __check_for_idle_flows(ndpi_workflow_t *const workflow) {
 
   if (workflow->last_idle_scan_time + IDLE_SCAN_PERIOD < workflow->last_time) {
     for (idle_scan_index = 0; idle_scan_index < workflow->max_active_flows;
-         ++idle_scan_index) {
+	 ++idle_scan_index) {
       ndpi_twalk(workflow->ndpi_flows_active[idle_scan_index],
-                 __ndpi_idle_scan_walker, workflow);
+		 __ndpi_idle_scan_walker, workflow);
 
       while (workflow->cur_idle_flows > 0) {
-        ndpi_flow_info_t *const f =
-            (ndpi_flow_info_t *)
-                workflow->ndpi_flows_idle[--workflow->cur_idle_flows];
-        ndpi_tdelete(f, &workflow->ndpi_flows_active[idle_scan_index],
-                     __ndpi_workflow_node_cmp);
-        __ndpi_flow_info_free(f);
-        workflow->cur_active_flows--;
+	ndpi_flow_info_t *const f =
+	    (ndpi_flow_info_t *)
+		workflow->ndpi_flows_idle[--workflow->cur_idle_flows];
+	ndpi_tdelete(f, &workflow->ndpi_flows_active[idle_scan_index],
+		     __ndpi_workflow_node_cmp);
+	__ndpi_flow_info_free(f);
+	workflow->cur_active_flows--;
       }
     }
 
@@ -283,8 +283,8 @@ static void __check_for_idle_flows(ndpi_workflow_t *const workflow) {
 }
 
 void ndpi_process_packet(uint8_t *const args,
-                         struct afpacket_pkthdr const *const header,
-                         uint8_t const *const packet) {
+			 struct afpacket_pkthdr const *const header,
+			 uint8_t const *const packet) {
   ndpi_work_thread_t *const reader_thread = (ndpi_work_thread_t *)args;
   ndpi_workflow_t *workflow;
   ndpi_flow_info_t flow;
@@ -308,7 +308,7 @@ void ndpi_process_packet(uint8_t *const args,
   uint16_t type;
   uint32_t thread_index =
       INITIAL_THREAD_HASH;  // generated with `dd if=/dev/random bs=1024 count=1
-                            // |& hd'
+			    // |& hd'
 
   memset(&flow, '\0', sizeof(flow));
 
@@ -323,7 +323,7 @@ void ndpi_process_packet(uint8_t *const args,
 
   workflow->packets_captured++;
   time_ms = ((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION +
-            header->ts.tv_usec / (1000000 / TICK_RESOLUTION);
+	    header->ts.tv_usec / (1000000 / TICK_RESOLUTION);
   workflow->last_time = time_ms;
 
   __check_for_idle_flows(workflow);
@@ -337,14 +337,14 @@ void ndpi_process_packet(uint8_t *const args,
   switch (type) {
     case ETH_P_IP: /* IPv4 */
       if (header->len <
-          sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_iphdr)) {
-        return;
+	  sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_iphdr)) {
+	return;
       }
       break;
     case ETH_P_IPV6: /* IPV6 */
       if (header->len <
-          sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_ipv6hdr)) {
-        return;
+	  sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_ipv6hdr)) {
+	return;
       }
       break;
     case ETH_P_ARP: /* ARP */
@@ -378,16 +378,16 @@ void ndpi_process_packet(uint8_t *const args,
 
     flow.l3_type = IPv4;
     if (ndpi_detection_get_l4((uint8_t *)ip, ip_size, &l4_ptr, &l4_len,
-                              &flow.l4_protocol,
-                              NDPI_DETECTION_ONLY_IPV4) != 0) {
+			      &flow.l4_protocol,
+			      NDPI_DETECTION_ONLY_IPV4) != 0) {
       return;
     }
 
     flow.ip_tuple.v4.src = ip->saddr;
     flow.ip_tuple.v4.dst = ip->daddr;
     uint32_t min_addr =
-        (flow.ip_tuple.v4.src > flow.ip_tuple.v4.dst ? flow.ip_tuple.v4.dst
-                                                     : flow.ip_tuple.v4.src);
+	(flow.ip_tuple.v4.src > flow.ip_tuple.v4.dst ? flow.ip_tuple.v4.dst
+						     : flow.ip_tuple.v4.src);
     thread_index = min_addr + ip->protocol;
   } else if (ip6 != NULL) {
     if (ip_size < sizeof(ip6->ip6_hdr)) {
@@ -396,8 +396,8 @@ void ndpi_process_packet(uint8_t *const args,
 
     flow.l3_type = IPv6;
     if (ndpi_detection_get_l4((uint8_t *)ip6, ip_size, &l4_ptr, &l4_len,
-                              &flow.l4_protocol,
-                              NDPI_DETECTION_ONLY_IPV6) != 0) {
+			      &flow.l4_protocol,
+			      NDPI_DETECTION_ONLY_IPV6) != 0) {
       return;
     }
 
@@ -407,7 +407,7 @@ void ndpi_process_packet(uint8_t *const args,
     flow.ip_tuple.v6.dst[1] = ip6->ip6_dst.u6_addr.u6_addr64[1];
     uint64_t min_addr[2];
     if (flow.ip_tuple.v6.src[0] > flow.ip_tuple.v6.dst[0] &&
-        flow.ip_tuple.v6.src[1] > flow.ip_tuple.v6.dst[1]) {
+	flow.ip_tuple.v6.src[1] > flow.ip_tuple.v6.dst[1]) {
       min_addr[0] = flow.ip_tuple.v6.dst[0];
       min_addr[1] = flow.ip_tuple.v6.dst[0];
     } else {
@@ -460,21 +460,21 @@ void ndpi_process_packet(uint8_t *const args,
     /* calculate flow hash for btree find, search(insert) */
     if (flow.l3_type == IPv4) {
       if (ndpi_flowv4_flow_hash(flow.l4_protocol, flow.ip_tuple.v4.src,
-                                flow.ip_tuple.v4.dst, flow.src_port,
-                                flow.dst_port, 0, 0, (uint8_t *)&tmp[0],
-                                sizeof(tmp)) != 0) {
-        flow.hashval = flow.ip_tuple.v4.src + flow.ip_tuple.v4.dst;  // fallback
+				flow.ip_tuple.v4.dst, flow.src_port,
+				flow.dst_port, 0, 0, (uint8_t *)&tmp[0],
+				sizeof(tmp)) != 0) {
+	flow.hashval = flow.ip_tuple.v4.src + flow.ip_tuple.v4.dst;  // fallback
       } else {
-        flow.hashval = tmp[0] + tmp[1] + tmp[2] + tmp[3];
+	flow.hashval = tmp[0] + tmp[1] + tmp[2] + tmp[3];
       }
     } else if (flow.l3_type == IPv6) {
       if (ndpi_flowv6_flow_hash(flow.l4_protocol, &ip6->ip6_src, &ip6->ip6_dst,
-                                flow.src_port, flow.dst_port, 0, 0,
-                                (uint8_t *)&tmp[0], sizeof(tmp)) != 0) {
-        flow.hashval = flow.ip_tuple.v6.src[0] + flow.ip_tuple.v6.src[1];
-        flow.hashval += flow.ip_tuple.v6.dst[0] + flow.ip_tuple.v6.dst[1];
+				flow.src_port, flow.dst_port, 0, 0,
+				(uint8_t *)&tmp[0], sizeof(tmp)) != 0) {
+	flow.hashval = flow.ip_tuple.v6.src[0] + flow.ip_tuple.v6.src[1];
+	flow.hashval += flow.ip_tuple.v6.dst[0] + flow.ip_tuple.v6.dst[1];
       } else {
-        flow.hashval = tmp[0] + tmp[1] + tmp[2] + tmp[3];
+	flow.hashval = tmp[0] + tmp[1] + tmp[2] + tmp[3];
       }
     }
 
@@ -483,15 +483,15 @@ void ndpi_process_packet(uint8_t *const args,
 
   hashed_index = flow.hashval % workflow->max_active_flows;
   tree_result = ndpi_tfind(&flow, &workflow->ndpi_flows_active[hashed_index],
-                           __ndpi_workflow_node_cmp);
+			   __ndpi_workflow_node_cmp);
   if (tree_result == NULL) {
     /* flow not found in btree: switch src <-> dst and try to find it again */
     uint32_t orig_src_ip[4] = {
-        flow.ip_tuple.u32.src[0], flow.ip_tuple.u32.src[1],
-        flow.ip_tuple.u32.src[2], flow.ip_tuple.u32.src[3]};
+	flow.ip_tuple.u32.src[0], flow.ip_tuple.u32.src[1],
+	flow.ip_tuple.u32.src[2], flow.ip_tuple.u32.src[3]};
     uint32_t orig_dst_ip[4] = {
-        flow.ip_tuple.u32.dst[0], flow.ip_tuple.u32.dst[1],
-        flow.ip_tuple.u32.dst[2], flow.ip_tuple.u32.dst[3]};
+	flow.ip_tuple.u32.dst[0], flow.ip_tuple.u32.dst[1],
+	flow.ip_tuple.u32.dst[2], flow.ip_tuple.u32.dst[3]};
     uint16_t orig_src_port = flow.src_port;
     uint16_t orig_dst_port = flow.dst_port;
 
@@ -509,7 +509,7 @@ void ndpi_process_packet(uint8_t *const args,
     flow.dst_port = orig_src_port;
 
     tree_result = ndpi_tfind(&flow, &workflow->ndpi_flows_active[hashed_index],
-                             __ndpi_workflow_node_cmp);
+			     __ndpi_workflow_node_cmp);
 
     flow.ip_tuple.u32.src[0] = orig_src_ip[0];
     flow.ip_tuple.u32.src[1] = orig_src_ip[1];
@@ -539,15 +539,15 @@ void ndpi_process_packet(uint8_t *const args,
     memcpy(flow_to_process, &flow, sizeof(*flow_to_process));
 
     flow_to_process->ndpi_flow =
-        (struct ndpi_flow_struct *)ndpi_flow_malloc(SIZEOF_FLOW_STRUCT);
+	(struct ndpi_flow_struct *)ndpi_flow_malloc(SIZEOF_FLOW_STRUCT);
     if (flow_to_process->ndpi_flow == NULL) {
       return;
     }
     memset(flow_to_process->ndpi_flow, 0, SIZEOF_FLOW_STRUCT);
 
     if (ndpi_tsearch(flow_to_process,
-                     &workflow->ndpi_flows_active[hashed_index],
-                     __ndpi_workflow_node_cmp) == NULL) {
+		     &workflow->ndpi_flows_active[hashed_index],
+		     __ndpi_workflow_node_cmp) == NULL) {
       /* Possible Leak, but should not happen as we'd abort earlier. */
       return;
     }
@@ -584,8 +584,8 @@ void ndpi_process_packet(uint8_t *const args,
     /* last chance to guess something, better then nothing */
     uint8_t protocol_was_guessed = 0;
     flow_to_process->guessed_protocol =
-        ndpi_detection_giveup(workflow->ndpi_struct, flow_to_process->ndpi_flow,
-                              &protocol_was_guessed);
+	ndpi_detection_giveup(workflow->ndpi_struct, flow_to_process->ndpi_flow,
+			      &protocol_was_guessed);
   }
 
   flow_to_process->detected_l7_protocol = ndpi_detection_process_packet(
@@ -595,22 +595,22 @@ void ndpi_process_packet(uint8_t *const args,
   if (ndpi_is_protocol_detected(flow_to_process->detected_l7_protocol) != 0 &&
       flow_to_process->detection_completed == 0) {
     if (flow_to_process->detected_l7_protocol.proto.master_protocol !=
-            NDPI_PROTOCOL_UNKNOWN ||
-        flow_to_process->detected_l7_protocol.proto.app_protocol !=
-            NDPI_PROTOCOL_UNKNOWN) {
+	    NDPI_PROTOCOL_UNKNOWN ||
+	flow_to_process->detected_l7_protocol.proto.app_protocol !=
+	    NDPI_PROTOCOL_UNKNOWN) {
       flow_to_process->detection_completed = 1;
       workflow->detected_flow_protocols++;
     }
 
     if (flow_to_process->ndpi_flow->num_extra_packets_checked <=
-        flow_to_process->ndpi_flow->max_extra_packets_to_check) {
+	flow_to_process->ndpi_flow->max_extra_packets_to_check) {
       uint32_t json_str_len = 0;
       ndpi_reset_serializer(&workflow->json_serializer);
       ndpi_dpi2json(workflow->ndpi_struct, flow_to_process->ndpi_flow,
-                    flow_to_process->detected_l7_protocol,
-                    &workflow->json_serializer);
+		    flow_to_process->detected_l7_protocol,
+		    &workflow->json_serializer);
       char *json_str =
-          ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
+	  ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
       printf("%s\n", json_str);
     }
   }
