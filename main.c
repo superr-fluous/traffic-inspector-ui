@@ -8,6 +8,8 @@
 
 #include "ini.h"
 
+#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
+
 typedef struct {
   uint8_t number_of_workers;
   const char *name_of_device;
@@ -18,7 +20,6 @@ void run_workers(void *arg) {}
 static int config_handler(void *user, const char *section, const char *name,
 			  const char *value) {
   config_t *config = (config_t *)user;
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
   if (MATCH("common", "workers")) {
     config->number_of_workers = atoi(value);
   } else if (MATCH("common", "device")) {
