@@ -131,6 +131,7 @@ free_workflow(ndpi_workflow_t** const workflow) {
     afpacket_close(w->handle);
     ndpi_free(w->ndpi_flows_active);
     ndpi_free(w->ndpi_flows_idle);
+    ndpi_term_serializer(&w->json_serializer);
     ndpi_free(w);
     *workflow = NULL;
 }

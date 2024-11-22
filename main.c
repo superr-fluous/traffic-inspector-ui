@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <threads.h>
+#include <pthread.h>
 #include <unistd.h>
 
 #include "ini.h"
@@ -26,20 +26,20 @@ typedef struct {
 
 typedef struct {
     int thread_id;
+    pthread_t thread;
     ndpi_workflow_t* workflow;
 } worker_t;
 
-static thrd_t* threads = NULL;
 static worker_t* workers = NULL;
 
 static atomic_bool shutdown_requested = false;
 
-static int
+static void *
 run_worker(void* args) {
     worker_t* worker = (worker_t*)args;
     printf("Starting thread [%d]\n", worker->thread_id);
     run_afpacket_loop(worker->workflow->handle, ndpi_process_packet, (uint8_t*)worker->workflow);
-    return 0;
+    return NULL;
 }
 
 static int
@@ -68,25 +68,17 @@ setup_workers(config_t* config) {
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
     sigaction(SIGINT, &action, NULL);
-    sigprocmask(SIG_BLOCK, &action.sa_mask, NULL);
 
-    if (!(threads = (thrd_t*)malloc(config->number_of_workers * sizeof(thrd_t)))) {
-        fprintf(stderr, "Failed to allocate threads\n");
-        return -1;
-    }
-    memset(threads, 0, config->number_of_workers * sizeof(thrd_t));
 
     if (!(workers = (worker_t*)malloc(config->number_of_workers * sizeof(worker_t)))) {
-        free(threads);
         fprintf(stderr, "Failed to allocate workers\n");
         return -1;
     }
-    memset(threads, 0, config->number_of_workers * sizeof(worker_t));
+    memset(workers, 0, config->number_of_workers * sizeof(worker_t));
 
     for (int i = 0; i < config->number_of_workers; i++) {
         workers[i].thread_id = i;
         if (!(workers[i].workflow = init_workflow(config->name_of_device, config->number_of_workers))) {
-            free(threads);
             free(workers);
             fprintf(stderr, "Failed to allocate workflow\n");
             return -1;
@@ -94,19 +86,16 @@ setup_workers(config_t* config) {
     }
 
     for (int i = 0; i < config->number_of_workers; i++) {
-        thrd_create(&threads[i], run_worker, &workers[i]);
-        sigprocmask(SIG_BLOCK, &action.sa_mask, NULL);
+        pthread_create(&workers[i].thread, NULL, run_worker, (void *)&workers[i]);
     }
     return 0;
 }
 
 static void
-stop_workers(config_t* config) {
+stop_workers(config_t* config) { 
     for (int i = 0; i < config->number_of_workers; i++) {
-        break_afpacket_loop(workers[i].workflow->handle);
-    }
-    for (int i = 0; i < config->number_of_workers; i++) {
-        thrd_join(threads[i], NULL);
+	pthread_kill(workers[i].thread, SIGINT);
+        pthread_join(workers[i].thread, NULL);
         free_workflow(&workers[i].workflow);
     }
 }

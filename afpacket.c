@@ -4,15 +4,14 @@
 #include <linux/if.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
-#include <stdatomic.h>
-#include <stdbool.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/poll.h>
-#include <threads.h>
 #include <unistd.h>
+#include <errno.h>
 
 struct block_desc {
     uint32_t version;
@@ -195,31 +194,29 @@ __flush_block(struct block_desc* pbd) {
 void
 run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_data) {
     uint32_t current_block_num = 0;
-
+    int ret = 0;	
     struct pollfd pfd;
     memset(&pfd, 0, sizeof(pfd));
 
     pfd.fd = handle->socket_fd;
     pfd.events = POLLIN | POLLERR;
     pfd.revents = 0;
-
-    while (!atomic_load_explicit(&handle->break_loop, memory_order_acquire)) {
+    while (true) {
         struct block_desc* pbd = (struct block_desc*)handle->io[current_block_num].iov_base;
 
         if ((pbd->header.block_status & TP_STATUS_USER) == 0) {
-            poll(&pfd, 1, -1);
+            ret = poll(&pfd, 1, -1);
+	    if (ret == -1) {
+		    if (errno == EINTR) {
+			    return;
+		    }
+	    }
             continue;
         }
-
         __process_block(pbd, current_block_num, callback, user_data);
         __flush_block(pbd);
         current_block_num = (current_block_num + 1) % blocknum;
     }
-}
-
-void
-break_afpacket_loop(afpacket_t* handle) {
-    atomic_store_explicit(&handle->break_loop, true, memory_order_release);
 }
 
 void
