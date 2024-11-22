@@ -7,14 +7,6 @@
 
 #include "afpacket.h"
 
-// consts from nDPISimpleIntegration....
-#define MAX_FLOW_ROOTS_PER_THREAD 2048
-#define MAX_IDLE_FLOWS_PER_THREAD 64
-#define TICK_RESOLUTION           1000
-#define IDLE_SCAN_PERIOD          10000  /* msec */
-#define MAX_IDLE_TIME             300000 /* msec */
-#define INITIAL_THREAD_HASH       0x03dd018b
-
 typedef struct {
     afpacket_t* handle;
     ndpi_serializer json_serializer;
@@ -40,13 +32,7 @@ typedef struct {
     struct ndpi_detection_module_struct* ndpi_struct;
 } ndpi_workflow_t;
 
-typedef struct {
-    ndpi_workflow_t* workflow;
-    pthread_t thread_id;
-    uint32_t array_index;
-} ndpi_work_thread_t;
-
-ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id, uint8_t number_of_threads);
+ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id);
 void free_workflow(ndpi_workflow_t** const workflow);
 void ndpi_process_packet(uint8_t* const args, struct afpacket_pkthdr const* const header, uint8_t const* const packet);
 

@@ -2,6 +2,14 @@
 
 #include <linux/if_ether.h>
 
+
+// consts from nDPISimpleIntegration....
+#define MAX_FLOW_ROOTS_PER_THREAD 2048
+#define MAX_IDLE_FLOWS_PER_THREAD 64
+#define TICK_RESOLUTION           1000
+#define IDLE_SCAN_PERIOD          10000  /* msec */
+#define MAX_IDLE_TIME             300000 /* msec */
+
 enum IP_TYPE { IPv4, IPv6 };
 
 typedef struct {
@@ -45,15 +53,12 @@ typedef struct {
   struct ndpi_flow_struct *ndpi_flow;
 } ndpi_flow_info_t;
 
-ndpi_workflow_t *init_workflow(const char *name_of_device, int fanout_group_id,
-			       uint8_t number_of_threads) {
+ndpi_workflow_t *init_workflow(const char *name_of_device, int fanout_group_id) {
   ndpi_workflow_t *workflow = NULL;
   if (!(workflow =
 	    (ndpi_workflow_t *)ndpi_calloc(1, sizeof(ndpi_workflow_t)))) {
     return NULL;
   }
-
-  workflow->number_of_threads = number_of_threads;
 
   if (!(workflow->handle =
 	    open_afpacket_socket(name_of_device, fanout_group_id))) {
@@ -285,8 +290,12 @@ static void __check_for_idle_flows(ndpi_workflow_t *const workflow) {
 void ndpi_process_packet(uint8_t *const args,
 			 struct afpacket_pkthdr const *const header,
 			 uint8_t const *const packet) {
-  ndpi_work_thread_t *const reader_thread = (ndpi_work_thread_t *)args;
-  ndpi_workflow_t *workflow;
+  ndpi_workflow_t *workflow = (ndpi_workflow_t *)args;
+
+  if (!workflow) {
+    return;
+  }
+
   ndpi_flow_info_t flow;
 
   size_t hashed_index;
@@ -306,20 +315,8 @@ void ndpi_process_packet(uint8_t *const args,
   uint16_t l4_len = 0;
 
   uint16_t type;
-  uint32_t thread_index =
-      INITIAL_THREAD_HASH;  // generated with `dd if=/dev/random bs=1024 count=1
-			    // |& hd'
 
   memset(&flow, '\0', sizeof(flow));
-
-  if (reader_thread == NULL) {
-    return;
-  }
-  workflow = reader_thread->workflow;
-
-  if (workflow == NULL) {
-    return;
-  }
 
   workflow->packets_captured++;
   time_ms = ((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION +
@@ -388,7 +385,6 @@ void ndpi_process_packet(uint8_t *const args,
     uint32_t min_addr =
 	(flow.ip_tuple.v4.src > flow.ip_tuple.v4.dst ? flow.ip_tuple.v4.dst
 						     : flow.ip_tuple.v4.src);
-    thread_index = min_addr + ip->protocol;
   } else if (ip6 != NULL) {
     if (ip_size < sizeof(ip6->ip6_hdr)) {
       return;
@@ -414,7 +410,6 @@ void ndpi_process_packet(uint8_t *const args,
       min_addr[0] = flow.ip_tuple.v6.src[0];
       min_addr[1] = flow.ip_tuple.v6.src[0];
     }
-    thread_index = min_addr[0] + min_addr[1] + ip6->ip6_hdr.ip6_un1_nxt;
   } else {
     return;
   }
@@ -443,14 +438,6 @@ void ndpi_process_packet(uint8_t *const args,
     flow.dst_port = ntohs(udp->dest);
   }
 
-  /* distribute flows to threads while keeping stability (same flow goes always
-   * to same thread) */
-  thread_index +=
-      (flow.src_port < flow.dst_port ? flow.dst_port : flow.src_port);
-  thread_index %= workflow->number_of_threads;
-  if (thread_index != reader_thread->array_index) {
-    return;
-  }
   workflow->packets_processed++;
   workflow->total_l4_data_len += l4_len;
 
