@@ -6,7 +6,6 @@
 #include <net/ethernet.h>
 #include <stdatomic.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -166,7 +165,7 @@ open_afpacket_socket(const char* name_of_device, int fanout_group_id) {
     return handle;
 }
 
-static int
+static void
 __process_block(struct block_desc* pbd, const int block_num, packet_handler callback, uint8_t* user_data) {
     int num_pkts = pbd->header.num_pkts, i;
     struct tpacket3_hdr* ppd;
@@ -186,7 +185,6 @@ __process_block(struct block_desc* pbd, const int block_num, packet_handler call
 
         ppd = (struct tpacket3_hdr*)((uint8_t*)ppd + ppd->tp_next_offset);
     }
-    return 0;
 }
 
 static void
@@ -213,9 +211,7 @@ run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_dat
             continue;
         }
 
-        if (__process_block(pbd, current_block_num, callback, user_data) == -1) {
-            return;
-        }
+        __process_block(pbd, current_block_num, callback, user_data);
         __flush_block(pbd);
         current_block_num = (current_block_num + 1) % blocknum;
     }
