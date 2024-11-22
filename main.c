@@ -57,7 +57,6 @@ static int config_handler(void *user, const char *section, const char *name,
 static void sig_handler(int sig) {
         (void)sig;
         atomic_store(&shutdown_requested,true);
-        printf("shutdown_requested=%d\n", atomic_load(&shutdown_requested));
 }
 
 static int setup_workers(config_t *config) {

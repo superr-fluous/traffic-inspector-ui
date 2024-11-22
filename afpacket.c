@@ -211,9 +211,13 @@ void run_afpacket_loop(afpacket_t *handle, packet_handler callback,
   pfd.events = POLLIN | POLLERR;
   pfd.revents = 0;
 
-  while (!atomic_load_explicit(&break_loop, memory_order_acquire)) {
+  while (true) {
     struct block_desc *pbd =
         (struct block_desc *)handle->io[current_block_num].iov_base;
+
+    if (!atomic_load_explicit(&break_loop, memory_order_acquire)) {
+      return;
+    }
 
     if ((pbd->header.block_status & TP_STATUS_USER) == 0) {
       poll(&pfd, 1, -1);
