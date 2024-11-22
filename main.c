@@ -68,6 +68,7 @@ setup_workers(config_t* config) {
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
     sigaction(SIGINT, &action, NULL);
+    sigprocmask(SIG_BLOCK, &action.sa_mask, NULL);
 
     if (!(threads = (thrd_t*)malloc(config->number_of_workers * sizeof(thrd_t)))) {
         fprintf(stderr, "Failed to allocate threads\n");
@@ -94,14 +95,16 @@ setup_workers(config_t* config) {
 
     for (int i = 0; i < config->number_of_workers; i++) {
         thrd_create(&threads[i], run_worker, &workers[i]);
+        sigprocmask(SIG_BLOCK, &action.sa_mask, NULL);
     }
     return 0;
 }
 
 static void
 stop_workers(config_t* config) {
-    break_afpacket_loop();
-
+    for (int i = 0; i < config->number_of_workers; i++) {
+        break_afpacket_loop(workers[i].workflow->handle);
+    }
     for (int i = 0; i < config->number_of_workers; i++) {
         thrd_join(threads[i], NULL);
         free_workflow(&workers[i].workflow);

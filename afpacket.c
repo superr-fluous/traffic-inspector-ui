@@ -6,6 +6,7 @@
 #include <net/ethernet.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -19,8 +20,6 @@ struct block_desc {
     uint32_t offset_to_priv;
     struct tpacket_hdr_v1 header;
 };
-
-static atomic_bool break_loop = false;
 
 static const int TPACKET_VERSION = TPACKET_V3;
 static const int PACKET_FANOUT_TYPE = PACKET_FANOUT_CPU;
@@ -167,7 +166,7 @@ open_afpacket_socket(const char* name_of_device, int fanout_group_id) {
     return handle;
 }
 
-static void
+static int
 __process_block(struct block_desc* pbd, const int block_num, packet_handler callback, uint8_t* user_data) {
     int num_pkts = pbd->header.num_pkts, i;
     struct tpacket3_hdr* ppd;
@@ -187,6 +186,7 @@ __process_block(struct block_desc* pbd, const int block_num, packet_handler call
 
         ppd = (struct tpacket3_hdr*)((uint8_t*)ppd + ppd->tp_next_offset);
     }
+    return 0;
 }
 
 static void
@@ -205,27 +205,25 @@ run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_dat
     pfd.events = POLLIN | POLLERR;
     pfd.revents = 0;
 
-    while (true) {
+    while (!atomic_load_explicit(&handle->break_loop, memory_order_acquire)) {
         struct block_desc* pbd = (struct block_desc*)handle->io[current_block_num].iov_base;
-
-        if (!atomic_load_explicit(&break_loop, memory_order_acquire)) {
-            return;
-        }
 
         if ((pbd->header.block_status & TP_STATUS_USER) == 0) {
             poll(&pfd, 1, -1);
             continue;
         }
 
-        __process_block(pbd, current_block_num, callback, user_data);
+        if (__process_block(pbd, current_block_num, callback, user_data) == -1) {
+            return;
+        }
         __flush_block(pbd);
         current_block_num = (current_block_num + 1) % blocknum;
     }
 }
 
 void
-break_afpacket_loop() {
-    atomic_store(&break_loop, true);
+break_afpacket_loop(afpacket_t* handle) {
+    atomic_store_explicit(&handle->break_loop, true, memory_order_release);
 }
 
 void

@@ -15,6 +15,7 @@ struct afpacket_pkthdr {
 typedef struct {
     int socket_fd;
     struct iovec* io;
+    atomic_bool break_loop;
 } afpacket_t;
 
 typedef void (*packet_handler)(uint8_t* const, struct afpacket_pkthdr const* const, uint8_t const* const);
@@ -23,7 +24,7 @@ afpacket_t* open_afpacket_socket(const char* name_of_device, int fanout_group_id
 
 void run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_data);
 
-void break_afpacket_loop();
+void break_afpacket_loop(afpacket_t* handle);
 
 void afpacket_close(afpacket_t* handle);
 
