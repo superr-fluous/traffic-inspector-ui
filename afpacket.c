@@ -4,6 +4,7 @@
 #include <linux/if.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
+#include <net/if.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -27,24 +28,6 @@ static const uint32_t blocksiz = 1 << 22;
 // 2048 bytes
 static const uint32_t framesiz = 1 << 11;
 static const uint32_t blocknum = 64;
-
-static int
-__get_interface_by_device_name(int socket_fd, const char* name_of_device) {
-    struct ifreq ifr;
-    memset(&ifr, 0, sizeof(ifr));
-
-    if (strlen(name_of_device) > IFNAMSIZ) {
-        return -1;
-    }
-
-    strncpy(ifr.ifr_name, name_of_device, sizeof(ifr.ifr_name));
-
-    if (ioctl(socket_fd, SIOCGIFINDEX, &ifr) == -1) {
-        return -1;
-    }
-
-    return ifr.ifr_ifindex;
-}
 
 static int
 __set_promisc_mode(int socket_fd, int interface_number) {
@@ -128,7 +111,7 @@ open_afpacket_socket(const char* name_of_device, int fanout_group_id) {
         return NULL;
     }
 
-    int interface_number = __get_interface_by_device_name(handle->socket_fd, name_of_device);
+    int interface_number = if_nametoindex(name_of_device); 
 
     if (interface_number == -1) {
         close(handle->socket_fd);
