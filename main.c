@@ -24,12 +24,6 @@ typedef struct {
     char* name_of_device;
 } config_t;
 
-typedef struct {
-    int thread_id;
-    pthread_t thread;
-    ndpi_workflow_t* workflow;
-} worker_t;
-
 static worker_t* workers = NULL;
 
 static atomic_bool shutdown_requested = false;
@@ -37,8 +31,8 @@ static atomic_bool shutdown_requested = false;
 static void*
 run_worker(void* args) {
     worker_t* worker = (worker_t*)args;
-    printf("Starting thread [%d]\n", worker->thread_id);
-    run_afpacket_loop(worker->workflow->handle, ndpi_process_packet, (uint8_t*)worker->workflow);
+    printf("Starting thread [%d]\n", worker->id);
+    run_afpacket_loop(worker->workflow->handle, ndpi_process_packet, (uint8_t*)worker);
     return NULL;
 }
 
@@ -77,7 +71,8 @@ setup_workers(const config_t* config) {
     }
 
     for (int i = 0; i < config->number_of_workers; i++) {
-        workers[i].thread_id = i;
+        workers[i].id = i;
+        workers[i].number_of_workers = config->number_of_workers;
         if (!(workers[i].workflow = init_workflow(config->name_of_device, fanout_group_id))) {
             free(workers);
             fprintf(stderr, "Failed to allocate workflow\n");

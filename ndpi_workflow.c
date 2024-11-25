@@ -8,8 +8,9 @@
 #define TICK_RESOLUTION           1000
 #define IDLE_SCAN_PERIOD          10000  /* msec */
 #define MAX_IDLE_TIME             300000 /* msec */
+#define INITIAL_THREAD_HASH       0x03dd018b
 
-enum IP_TYPE { IPv4, IPv6 };
+enum IP_TYPE { IPv4 = 4, IPv6 };
 
 typedef struct {
     unsigned long long int packets_processed;
@@ -268,7 +269,13 @@ __check_for_idle_flows(ndpi_workflow_t* const workflow) {
 
 void
 ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, const uint8_t* packet) {
-    ndpi_workflow_t* workflow = (ndpi_workflow_t*)args;
+    worker_t* worker = (worker_t*)args;
+
+    if (!worker) {
+        return;
+    }
+
+    ndpi_workflow_t* workflow = worker->workflow;
 
     if (!workflow) {
         return;
@@ -293,6 +300,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
     uint16_t l4_len = 0;
 
     uint16_t type;
+    uint32_t thread_index = INITIAL_THREAD_HASH;
 
     memset(&flow, '\0', sizeof(flow));
 
@@ -349,6 +357,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         flow.ip_tuple.v4.src = ip->saddr;
         flow.ip_tuple.v4.dst = ip->daddr;
         uint32_t min_addr = (flow.ip_tuple.v4.src > flow.ip_tuple.v4.dst ? flow.ip_tuple.v4.dst : flow.ip_tuple.v4.src);
+        thread_index = min_addr + ip->protocol;
     } else if (ip6 != NULL) {
         if (ip_size < sizeof(ip6->ip6_hdr)) {
             return;
@@ -372,6 +381,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
             min_addr[0] = flow.ip_tuple.v6.src[0];
             min_addr[1] = flow.ip_tuple.v6.src[0];
         }
+        thread_index = min_addr[0] + min_addr[1] + ip6->ip6_hdr.ip6_un1_nxt;
     } else {
         return;
     }
@@ -398,6 +408,12 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         udp = (struct ndpi_udphdr*)l4_ptr;
         flow.src_port = ntohs(udp->source);
         flow.dst_port = ntohs(udp->dest);
+    }
+
+    thread_index += (flow.src_port < flow.dst_port ? flow.dst_port : flow.src_port);
+    thread_index %= worker->number_of_workers;
+    if (thread_index != worker->id) {
+        return;
     }
 
     workflow->packets_processed++;
@@ -540,15 +556,18 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
             flow_to_process->detection_completed = 1;
             workflow->detected_flow_protocols++;
         }
+    }
 
-        if (flow_to_process->ndpi_flow->num_extra_packets_checked
-            <= flow_to_process->ndpi_flow->max_extra_packets_to_check) {
-            uint32_t json_str_len = 0;
-            ndpi_reset_serializer(&workflow->json_serializer);
-            ndpi_dpi2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->detected_l7_protocol,
-                          &workflow->json_serializer);
-            const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
-            printf("%s\n", json_str);
-        }
+    if (flow_to_process->ndpi_flow->num_extra_packets_checked
+        <= flow_to_process->ndpi_flow->max_extra_packets_to_check) {
+        uint32_t json_str_len = 0;
+        ndpi_reset_serializer(&workflow->json_serializer);
+        ndpi_flow2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->l3_type,
+                       flow_to_process->l4_protocol, 0, flow_to_process->ip_tuple.v4.src,
+                       flow_to_process->ip_tuple.v4.dst, flow_to_process->ip_tuple.v6.src,
+                       flow_to_process->ip_tuple.v6.dst, flow_to_process->src_port, flow_to_process->dst_port,
+                       flow_to_process->detected_l7_protocol, &workflow->json_serializer);
+        const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
+        printf("[%d] %s\n", worker->id, json_str);
     }
 }

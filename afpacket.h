@@ -17,11 +17,11 @@ typedef struct {
     struct iovec* io;
 } afpacket_t;
 
-typedef void (*packet_handler)(uint8_t* const, struct afpacket_pkthdr const* const, uint8_t const* const);
+typedef void (*packet_handler)(const uint8_t*, const struct afpacket_pkthdr*, const uint8_t*);
 
 afpacket_t* open_afpacket_socket(const char* name_of_device, int fanout_group_id);
 
-void run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_data);
+void run_afpacket_loop(afpacket_t* handle, packet_handler callback, const uint8_t* user_data);
 
 void afpacket_close(afpacket_t* handle);
 

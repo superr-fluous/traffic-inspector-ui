@@ -4,6 +4,7 @@
 #include <ndpi_api.h>
 #include <ndpi_main.h>
 #include <ndpi_typedefs.h>
+#include <pthread.h>
 
 #include "afpacket.h"
 
@@ -14,7 +15,6 @@ typedef struct {
     uint64_t packets_processed;
     uint64_t total_l4_data_len;
     uint64_t detected_flow_protocols;
-    uint8_t number_of_threads;
 
     uint64_t last_idle_scan_time;
     uint64_t last_time;
@@ -32,8 +32,15 @@ typedef struct {
     struct ndpi_detection_module_struct* ndpi_struct;
 } ndpi_workflow_t;
 
+typedef struct {
+    int id;
+    int number_of_workers;
+    pthread_t thread;
+    ndpi_workflow_t* workflow;
+} worker_t;
+
 ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id);
 void free_workflow(ndpi_workflow_t** const workflow);
-void ndpi_process_packet(uint8_t* const args, struct afpacket_pkthdr const* const header, uint8_t const* const packet);
+void ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, const uint8_t* packet);
 
 #endif /* __NDPI_WORKFLOW_H__ */
