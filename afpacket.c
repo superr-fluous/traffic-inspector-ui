@@ -1,18 +1,19 @@
 #include "afpacket.h"
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <linux/if.h>
 #include <linux/if_packet.h>
 #include <net/ethernet.h>
 #include <net/if.h>
-#include <stdlib.h>
+#include <pcap/pcap.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/poll.h>
 #include <unistd.h>
-#include <errno.h>
 
 struct block_desc {
     uint32_t version;
@@ -30,7 +31,7 @@ static const uint32_t framesiz = 1 << 11;
 static const uint32_t blocknum = 64;
 
 static int
-__set_promisc_mode(int socket_fd, int interface_number) {
+__set_promisc_mode(const int socket_fd, const int interface_number) {
     struct packet_mreq sock_params;
     memset(&sock_params, 0, sizeof(sock_params));
 
@@ -40,8 +41,29 @@ __set_promisc_mode(int socket_fd, int interface_number) {
     return setsockopt(socket_fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, (void*)&sock_params, sizeof(sock_params));
 }
 
+static int
+__set_bpf_filter(const char* name_of_device, const int sockfd) {
+    struct bpf_program bpf;
+    pcap_t* handle = pcap_open_dead(DLT_EN10MB, 65536);
+
+    if (pcap_compile(handle, &bpf, "ip or ip6", 1, 0) < 0) {
+        pcap_close(handle);
+        return -1;
+    }
+
+    if (setsockopt(sockfd, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) {
+        pcap_freecode(&bpf);
+        pcap_close(handle);
+        return -1;
+    }
+
+    pcap_freecode(&bpf);
+    pcap_close(handle);
+    return 0;
+}
+
 static struct iovec*
-__setup_rx_ring(int socket_fd, struct sockaddr_ll* bind_address) {
+__setup_rx_ring(const int socket_fd, const struct sockaddr_ll* bind_address) {
     struct tpacket_req3 req;
     memset(&req, 0, sizeof(req));
 
@@ -81,7 +103,7 @@ __setup_rx_ring(int socket_fd, struct sockaddr_ll* bind_address) {
 }
 
 static int
-__setup_fanout_group(int socket_fd, int fanout_group_id) {
+__setup_fanout_group(const int socket_fd, const int fanout_group_id) {
     int fanout_arg = (fanout_group_id | (PACKET_FANOUT_TYPE << 16));
     if (setsockopt(socket_fd, SOL_PACKET, PACKET_FANOUT, &fanout_arg, sizeof(fanout_arg))) {
         return -1;
@@ -90,17 +112,20 @@ __setup_fanout_group(int socket_fd, int fanout_group_id) {
 }
 
 afpacket_t*
-open_afpacket_socket(const char* name_of_device, int fanout_group_id) {
+open_afpacket_socket(const char* name_of_device, const int fanout_group_id) {
     afpacket_t* handle = NULL;
-    if ((handle = (afpacket_t*)malloc(sizeof(afpacket_t))) == NULL) {
+    if ((handle = (afpacket_t*)calloc(1, sizeof(afpacket_t))) == NULL) {
         return NULL;
     }
 
-    memset(handle, 0, sizeof(afpacket_t));
-
-    handle->socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-
     if ((handle->socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) == -1) {
+        free(handle);
+        return NULL;
+    }
+
+    if (__set_bpf_filter(name_of_device, handle->socket_fd) == -1) {
+        fprintf(stderr, "Failed to set bpf filter to device\n");
+        close(handle->socket_fd);
         free(handle);
         return NULL;
     }
@@ -111,7 +136,7 @@ open_afpacket_socket(const char* name_of_device, int fanout_group_id) {
         return NULL;
     }
 
-    int interface_number = if_nametoindex(name_of_device); 
+    int interface_number = if_nametoindex(name_of_device);
 
     if (interface_number == -1) {
         close(handle->socket_fd);
@@ -148,7 +173,7 @@ open_afpacket_socket(const char* name_of_device, int fanout_group_id) {
 }
 
 static void
-__process_block(struct block_desc* pbd, const int block_num, packet_handler callback, uint8_t* user_data) {
+__process_block(struct block_desc* pbd, const int block_num, packet_handler callback, const uint8_t* user_data) {
     int num_pkts = pbd->header.num_pkts, i;
     struct tpacket3_hdr* ppd;
 
@@ -169,15 +194,10 @@ __process_block(struct block_desc* pbd, const int block_num, packet_handler call
     }
 }
 
-static void
-__flush_block(struct block_desc* pbd) {
-    pbd->header.block_status = TP_STATUS_KERNEL;
-}
-
 void
-run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_data) {
+run_afpacket_loop(afpacket_t* handle, packet_handler callback, const uint8_t* user_data) {
     uint32_t current_block_num = 0;
-    int ret = 0;	
+    int ret = 0;
     struct pollfd pfd;
     memset(&pfd, 0, sizeof(pfd));
 
@@ -189,15 +209,15 @@ run_afpacket_loop(afpacket_t* handle, packet_handler callback, uint8_t* user_dat
 
         if ((pbd->header.block_status & TP_STATUS_USER) == 0) {
             ret = poll(&pfd, 1, -1);
-	    if (ret == -1) {
-		    if (errno == EINTR) {
-			    return;
-		    }
-	    }
+            if (ret == -1) {
+                if (errno == EINTR) {
+                    return;
+                }
+            }
             continue;
         }
         __process_block(pbd, current_block_num, callback, user_data);
-        __flush_block(pbd);
+        pbd->header.block_status = TP_STATUS_KERNEL;
         current_block_num = (current_block_num + 1) % blocknum;
     }
 }

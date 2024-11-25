@@ -156,12 +156,6 @@ __ip_tuple_to_string(ndpi_flow_info_t const* const flow, char* const src_addr_st
 
 static int
 __ip_tuples_compare(ndpi_flow_info_t const* const A, ndpi_flow_info_t const* const B) {
-    // generate a warning if the enum changes
-    switch (A->l3_type) {
-        case IPv4:
-        case IPv6: break;
-    }
-
     if (A->l3_type == IPv4 && B->l3_type == IPv4) {
         if (A->ip_tuple.v4.src < B->ip_tuple.v4.src) {
             return -1;
@@ -256,10 +250,8 @@ __ndpi_workflow_node_cmp(void const* const A, void const* const B) {
 
 static void
 __check_for_idle_flows(ndpi_workflow_t* const workflow) {
-    size_t idle_scan_index;
-
     if (workflow->last_idle_scan_time + IDLE_SCAN_PERIOD < workflow->last_time) {
-        for (idle_scan_index = 0; idle_scan_index < workflow->max_active_flows; ++idle_scan_index) {
+        for (size_t idle_scan_index = 0; idle_scan_index < workflow->max_active_flows; ++idle_scan_index) {
             ndpi_twalk(workflow->ndpi_flows_active[idle_scan_index], __ndpi_idle_scan_walker, workflow);
 
             while (workflow->cur_idle_flows > 0) {
@@ -275,7 +267,7 @@ __check_for_idle_flows(ndpi_workflow_t* const workflow) {
 }
 
 void
-ndpi_process_packet(uint8_t* const args, struct afpacket_pkthdr const* const header, uint8_t const* const packet) {
+ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, const uint8_t* packet) {
     ndpi_workflow_t* workflow = (ndpi_workflow_t*)args;
 
     if (!workflow) {
@@ -321,25 +313,19 @@ ndpi_process_packet(uint8_t* const args, struct afpacket_pkthdr const* const hea
             if (header->len < sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_iphdr)) {
                 return;
             }
+            ip = (struct ndpi_iphdr*)&packet[ip_offset];
+            ip6 = NULL;
             break;
         case ETH_P_IPV6: /* IPV6 */
             if (header->len < sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_ipv6hdr)) {
                 return;
             }
+            ip = NULL;
+            ip6 = (struct ndpi_ipv6hdr*)&packet[ip_offset];
             break;
-        case ETH_P_ARP: /* ARP */ return;
         default: return;
     }
 
-    if (type == ETH_P_IP) {
-        ip = (struct ndpi_iphdr*)&packet[ip_offset];
-        ip6 = NULL;
-    } else if (type == ETH_P_IPV6) {
-        ip = NULL;
-        ip6 = (struct ndpi_ipv6hdr*)&packet[ip_offset];
-    } else {
-        return;
-    }
     ip_size = header->len - ip_offset;
 
     if (type == ETH_P_IP && header->len >= ip_offset) {
@@ -447,10 +433,10 @@ ndpi_process_packet(uint8_t* const args, struct afpacket_pkthdr const* const hea
     tree_result = ndpi_tfind(&flow, &workflow->ndpi_flows_active[hashed_index], __ndpi_workflow_node_cmp);
     if (tree_result == NULL) {
         /* flow not found in btree: switch src <-> dst and try to find it again */
-        uint32_t orig_src_ip[4] = {flow.ip_tuple.u32.src[0], flow.ip_tuple.u32.src[1], flow.ip_tuple.u32.src[2],
-                                   flow.ip_tuple.u32.src[3]};
-        uint32_t orig_dst_ip[4] = {flow.ip_tuple.u32.dst[0], flow.ip_tuple.u32.dst[1], flow.ip_tuple.u32.dst[2],
-                                   flow.ip_tuple.u32.dst[3]};
+        const uint32_t orig_src_ip[4] = {flow.ip_tuple.u32.src[0], flow.ip_tuple.u32.src[1], flow.ip_tuple.u32.src[2],
+                                         flow.ip_tuple.u32.src[3]};
+        const uint32_t orig_dst_ip[4] = {flow.ip_tuple.u32.dst[0], flow.ip_tuple.u32.dst[1], flow.ip_tuple.u32.dst[2],
+                                         flow.ip_tuple.u32.dst[3]};
         uint16_t orig_src_port = flow.src_port;
         uint16_t orig_dst_port = flow.dst_port;
 
@@ -561,7 +547,7 @@ ndpi_process_packet(uint8_t* const args, struct afpacket_pkthdr const* const hea
             ndpi_reset_serializer(&workflow->json_serializer);
             ndpi_dpi2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->detected_l7_protocol,
                           &workflow->json_serializer);
-            char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
+            const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
             printf("%s\n", json_str);
         }
     }
