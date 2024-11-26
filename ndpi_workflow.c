@@ -301,7 +301,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
     uint16_t type;
     uint32_t thread_index = INITIAL_THREAD_HASH;
 
-    memset(&flow, '\0', sizeof(flow));
+    memset(&flow, 0, sizeof(flow));
 
     workflow->packets_captured++;
     time_ms = ((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION + header->ts.tv_usec / (1000000 / TICK_RESOLUTION);
@@ -531,29 +531,27 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         return;
     }
 
-    if (!flow_to_process->detection_completed) {
-        flow_to_process->detected_l7_protocol = ndpi_detection_process_packet(
-            workflow->ndpi_struct, flow_to_process->ndpi_flow, ip != NULL ? (uint8_t*)ip : (uint8_t*)ip6, ip_size,
-            time_ms, NULL);
+    flow_to_process->detected_l7_protocol = ndpi_detection_process_packet(
+        workflow->ndpi_struct, flow_to_process->ndpi_flow, ip != NULL ? (uint8_t*)ip : (uint8_t*)ip6, ip_size, time_ms,
+        NULL);
 
-        if (flow_to_process->detected_l7_protocol.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
-            uint8_t guessed = 0;
-            flow_to_process->detected_l7_protocol = ndpi_detection_giveup(workflow->ndpi_struct,
-                                                                          flow_to_process->ndpi_flow, &guessed);
-        }
+    if (flow_to_process->detected_l7_protocol.proto.app_protocol == NDPI_PROTOCOL_UNKNOWN) {
+        uint8_t guessed = 0;
+        flow_to_process->detected_l7_protocol = ndpi_detection_giveup(workflow->ndpi_struct, flow_to_process->ndpi_flow,
+                                                                      &guessed);
+    }
 
-        if (flow_to_process->detected_l7_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) {
-            flow_to_process->detection_completed = 1;
-            uint32_t json_str_len = 0;
-            ndpi_reset_serializer(&workflow->json_serializer);
-            ndpi_flow2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->l3_type,
-                           flow_to_process->l4_protocol, 0, flow_to_process->ip_tuple.v4.src,
-                           flow_to_process->ip_tuple.v4.dst, (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.src,
-                           (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.dst, flow_to_process->src_port,
-                           flow_to_process->dst_port, flow_to_process->detected_l7_protocol,
-                           &workflow->json_serializer);
-            const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
-            printf("[%d] [pkts = %lld] %s\n", worker->id, flow_to_process->packets_processed, json_str);
-        }
+    if (flow_to_process->detected_l7_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) {
+        flow_to_process->detection_completed = 1;
+        uint32_t json_str_len = 0;
+        ndpi_reset_serializer(&workflow->json_serializer);
+        ndpi_flow2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->l3_type,
+                       flow_to_process->l4_protocol, 0, flow_to_process->ip_tuple.v4.src,
+                       flow_to_process->ip_tuple.v4.dst, (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.src,
+                       (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.dst, htons(flow_to_process->src_port),
+                       htons(flow_to_process->dst_port), flow_to_process->detected_l7_protocol,
+                       &workflow->json_serializer);
+        const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
+        printf("[%d] [pkts = %lld] %s\n", worker->id, flow_to_process->packets_processed, json_str);
     }
 }
