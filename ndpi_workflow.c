@@ -50,14 +50,17 @@ typedef struct {
     uint8_t l4_protocol;
 
     struct ndpi_proto detected_l7_protocol;
-
     struct ndpi_flow_struct* ndpi_flow;
 } ndpi_flow_info_t;
 
 ndpi_workflow_t*
-init_workflow(const char* name_of_device, int fanout_group_id) {
+init_workflow(const char* name_of_device, int fanout_group_id, const char* collector_host, const int collector_port) {
     ndpi_workflow_t* workflow = NULL;
     if (!(workflow = (ndpi_workflow_t*)ndpi_calloc(1, sizeof(ndpi_workflow_t)))) {
+        return NULL;
+    }
+
+    if (!(workflow->client = init_collector_client(collector_host, collector_port))) {
         return NULL;
     }
 
@@ -129,9 +132,10 @@ free_workflow(ndpi_workflow_t** const workflow) {
     }
 
     afpacket_close(w->handle);
+    close_collector_client(w->client);
+    ndpi_term_serializer(&w->json_serializer);
     ndpi_free(w->ndpi_flows_active);
     ndpi_free(w->ndpi_flows_idle);
-    ndpi_term_serializer(&w->json_serializer);
     ndpi_free(w);
     *workflow = NULL;
 }
@@ -552,6 +556,6 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
                        htons(flow_to_process->dst_port), flow_to_process->detected_l7_protocol,
                        &workflow->json_serializer);
         const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
-        printf("[%d] [pkts = %lld] %s\n", worker->id, flow_to_process->packets_processed, json_str);
+        send_to_collector_client(workflow->client, json_str, json_str_len);
     }
 }

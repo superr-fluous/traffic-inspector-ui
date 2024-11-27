@@ -23,7 +23,7 @@ typedef struct {
     uint8_t number_of_workers;
     char* name_of_device;
     char* collector_host;
-    char* collector_port;
+    int collector_port;
 } config_t;
 
 static worker_t* workers = NULL;
@@ -45,6 +45,10 @@ config_handler(void* user, const char* section, const char* name, const char* va
         config->number_of_workers = atoi(value);
     } else if (MATCH("common", "device")) {
         config->name_of_device = strdup(value);
+    } else if (MATCH("common", "collector_host")) {
+        config->collector_host = strdup(value);
+    } else if (MATCH("common", "collector_port")) {
+        config->collector_port = atoi(value);
     } else {
         return -1;
     }
@@ -75,7 +79,8 @@ setup_workers(const config_t* config) {
     for (int i = 0; i < config->number_of_workers; i++) {
         workers[i].id = i;
         workers[i].number_of_workers = config->number_of_workers;
-        if (!(workers[i].workflow = init_workflow(config->name_of_device, fanout_group_id))) {
+        if (!(workers[i].workflow = init_workflow(config->name_of_device, fanout_group_id, config->collector_host,
+                                                  config->collector_port))) {
             free(workers);
             fprintf(stderr, "Failed to allocate workflow\n");
             return -1;
@@ -129,6 +134,7 @@ main(int argc, char** argv) {
     if (setup_workers(&config) == -1) {
         free(path_to_config);
         free(config.name_of_device);
+        free(config.collector_host);
         return 1;
     }
 
@@ -140,5 +146,6 @@ main(int argc, char** argv) {
 
     free(path_to_config);
     free(config.name_of_device);
+    free(config.collector_host);
     return 0;
 }

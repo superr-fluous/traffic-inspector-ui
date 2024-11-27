@@ -7,9 +7,11 @@
 #include <pthread.h>
 
 #include "afpacket.h"
+#include "collector_client.h"
 
 typedef struct {
     afpacket_t* handle;
+    collector_client_t* client;
     ndpi_serializer json_serializer;
     uint64_t packets_captured;
     uint64_t packets_processed;
@@ -39,7 +41,8 @@ typedef struct {
     ndpi_workflow_t* workflow;
 } worker_t;
 
-ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id);
+ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id, const char* collector_host,
+                               const int collector_port);
 void free_workflow(ndpi_workflow_t** const workflow);
 void ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, const uint8_t* packet);
 
