@@ -162,7 +162,7 @@ open_afpacket_socket(const char* name_of_device, const int fanout_group_id) {
         return NULL;
     }
 
-    if (__setup_fanout_group(handle->socket_fd, interface_number) == -1) {
+    if (__setup_fanout_group(handle->socket_fd, fanout_group_id) == -1) {
         close(handle->socket_fd);
         free(handle->io);
         free(handle);

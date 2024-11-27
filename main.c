@@ -22,6 +22,8 @@ const char* HELP = "TrafficInspector - simple packet inspection solution based o
 typedef struct {
     uint8_t number_of_workers;
     char* name_of_device;
+    char* collector_host;
+    char* collector_port;
 } config_t;
 
 static worker_t* workers = NULL;
