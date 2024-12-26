@@ -1,6 +1,6 @@
 [submodule "third_party/libndpi"]
-	path = third_party/libndpi
+	path = src/third_party/libndpi
 	url = https://github.com/ntop/nDPI.git
 [submodule "third_party/libinih"]
-	path = third_party/libinih
+	path = src/third_party/libinih
 	url = https://github.com/benhoyt/inih
