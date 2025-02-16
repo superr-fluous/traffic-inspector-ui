@@ -13,7 +13,6 @@ typedef struct {
     afpacket_t* handle;
     collector_client_t* client;
     ndpi_serializer flow_serializer;
-    uint64_t packets_captured;
     uint64_t detected_flow_protocols;
 
     uint64_t last_idle_scan_time;
