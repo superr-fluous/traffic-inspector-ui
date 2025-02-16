@@ -12,10 +12,8 @@
 typedef struct {
     afpacket_t* handle;
     collector_client_t* client;
-    ndpi_serializer json_serializer;
+    ndpi_serializer flow_serializer;
     uint64_t packets_captured;
-    uint64_t packets_processed;
-    uint64_t total_l4_data_len;
     uint64_t detected_flow_protocols;
 
     uint64_t last_idle_scan_time;
@@ -42,7 +40,7 @@ typedef struct {
 } worker_t;
 
 ndpi_workflow_t* init_workflow(const char* name_of_device, int fanout_group_id, const char* collector_host,
-                               const int collector_port);
+                               const int collector_port, const char* path_to_country_db, const char* path_to_asn_db);
 void free_workflow(ndpi_workflow_t** const workflow);
 void ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, const uint8_t* packet);
 

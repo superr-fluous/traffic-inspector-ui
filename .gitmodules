@@ -1,6 +1,12 @@
 [submodule "third_party/libndpi"]
-	path = src/third_party/libndpi
+	path = third_party/libndpi
 	url = https://github.com/ntop/nDPI.git
 [submodule "third_party/libinih"]
-	path = src/third_party/libinih
+	path = third_party/libinih
 	url = https://github.com/benhoyt/inih
+[submodule "third_party/libpcap"]
+	path = third_party/libpcap
+	url = https://github.com/the-tcpdump-group/libpcap.git
+[submodule "third_party/libmaxminddb"]
+	path = third_party/libmaxminddb
+	url = https://github.com/maxmind/libmaxminddb.git

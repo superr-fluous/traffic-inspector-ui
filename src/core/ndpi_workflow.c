@@ -1,6 +1,7 @@
 #include "ndpi_workflow.h"
 
 #include <linux/if_ether.h>
+#include <time.h>
 
 // consts from nDPISimpleIntegration....
 #define MAX_FLOW_ROOTS_PER_THREAD 2048
@@ -9,11 +10,14 @@
 #define IDLE_SCAN_PERIOD          10000  /* msec */
 #define MAX_IDLE_TIME             300000 /* msec */
 #define INITIAL_THREAD_HASH       0x03dd018b
+#define MAX_NUM_OF_UDP_PKTS       8
+#define MAX_NUM_OF_TCP_PKTS       24
 
-enum IP_TYPE { IPv4 = 4, IPv6 };
+enum IP_TYPE { IPv4 = 4, IPv6 = 6 };
 
 typedef struct {
-    unsigned long long int packets_processed;
+    uint64_t num_of_pkts;
+    uint64_t len_of_pkts;
     uint64_t first_seen;
     uint64_t last_seen;
     uint64_t hashval;
@@ -39,14 +43,14 @@ typedef struct {
         } u32;
     } ip_tuple;
 
-    unsigned long long int total_l4_data_len;
     uint16_t src_port;
     uint16_t dst_port;
 
-    uint8_t is_midstream_flow   : 1;
-    uint8_t flow_fin_ack_seen   : 1;
-    uint8_t flow_ack_seen       : 1;
-    uint8_t detection_completed : 1;
+    uint8_t is_midstream_flow : 1;
+    uint8_t flow_fin_ack_seen : 1;
+    uint8_t flow_ack_seen     : 1;
+    bool detection_completed;
+    bool ready_to_dump;
     uint8_t l4_protocol;
 
     struct ndpi_proto detected_l7_protocol;
@@ -54,7 +58,8 @@ typedef struct {
 } ndpi_flow_info_t;
 
 ndpi_workflow_t*
-init_workflow(const char* name_of_device, int fanout_group_id, const char* collector_host, const int collector_port) {
+init_workflow(const char* name_of_device, int fanout_group_id, const char* collector_host, const int collector_port,
+              const char* path_to_country_db, const char* path_to_asn_db) {
     ndpi_workflow_t* workflow = NULL;
     if (!(workflow = (ndpi_workflow_t*)ndpi_calloc(1, sizeof(ndpi_workflow_t)))) {
         return NULL;
@@ -88,7 +93,7 @@ init_workflow(const char* name_of_device, int fanout_group_id, const char* colle
         return NULL;
     }
 
-    if (ndpi_init_serializer(&workflow->json_serializer, ndpi_serialization_format_json) == -1) {
+    if (ndpi_init_serializer(&workflow->flow_serializer, ndpi_serialization_format_json) == -1) {
         free_workflow(&workflow);
         return NULL;
     }
@@ -100,6 +105,11 @@ init_workflow(const char* name_of_device, int fanout_group_id, const char* colle
         return NULL;
     }
     if (ndpi_finalize_initialization(workflow->ndpi_struct) == -1) {
+        free_workflow(&workflow);
+        return NULL;
+    }
+
+    if (ndpi_load_geoip(workflow->ndpi_struct, path_to_country_db, path_to_asn_db) < 0) {
         free_workflow(&workflow);
         return NULL;
     }
@@ -133,7 +143,7 @@ free_workflow(ndpi_workflow_t** const workflow) {
 
     afpacket_close(w->handle);
     close_collector_client(w->client);
-    ndpi_term_serializer(&w->json_serializer);
+    ndpi_term_serializer(&w->flow_serializer);
     ndpi_free(w->ndpi_flows_active);
     ndpi_free(w->ndpi_flows_idle);
     ndpi_free(w);
@@ -419,9 +429,6 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         return;
     }
 
-    workflow->packets_processed++;
-    workflow->total_l4_data_len += l4_len;
-
     {
         uint64_t tmp[4] = {};
 
@@ -506,7 +513,8 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
             return;
         }
         memset(flow_to_process->ndpi_flow, 0, SIZEOF_FLOW_STRUCT);
-
+        flow_to_process->detection_completed = false;
+        flow_to_process->ready_to_dump = false;
         if (ndpi_tsearch(flow_to_process, &workflow->ndpi_flows_active[hashed_index], __ndpi_workflow_node_cmp)
             == NULL) {
             /* Possible Leak, but should not happen as we'd abort earlier. */
@@ -519,8 +527,8 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         flow_to_process = *(ndpi_flow_info_t**)tree_result;
     }
 
-    flow_to_process->packets_processed++;
-    flow_to_process->total_l4_data_len += l4_len;
+    flow_to_process->num_of_pkts++;
+    flow_to_process->len_of_pkts += l4_len;
     /* update timestamps, important for timeout handling */
     if (flow_to_process->first_seen == 0) {
         flow_to_process->first_seen = time_ms;
@@ -534,37 +542,68 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         flow_to_process->flow_fin_ack_seen = 1;
         return;
     }
+    if (!flow_to_process->detection_completed) {
+        flow_to_process->detected_l7_protocol = ndpi_detection_process_packet(
+            workflow->ndpi_struct, flow_to_process->ndpi_flow, ip != NULL ? (uint8_t*)ip : (uint8_t*)ip6, ip_size,
+            time_ms, NULL);
 
-    if (flow_to_process->ndpi_flow->num_processed_pkts == 0xFF) {
-        return;
-    } else if (flow_to_process->ndpi_flow->num_processed_pkts == 0xFE) {
-        /* last chance to guess something, better then nothing */
-        uint8_t protocol_was_guessed = 0;
-        flow_to_process->detected_l7_protocol = ndpi_detection_giveup(workflow->ndpi_struct, flow_to_process->ndpi_flow,
-                                                                      &protocol_was_guessed);
-    }
+        if (ndpi_is_protocol_detected(flow_to_process->detected_l7_protocol) != 0) {
+            if (!ndpi_is_proto_unknown(flow_to_process->detected_l7_protocol.proto)) {
+                if (!ndpi_extra_dissection_possible(workflow->ndpi_struct, flow_to_process->ndpi_flow)) {
+                    flow_to_process->detection_completed = true;
+                    flow_to_process->ready_to_dump = true;
+                }
+            }
+        } else {
+            uint16_t max_num_pkts = (flow_to_process->l4_protocol == IPPROTO_UDP) ? MAX_NUM_OF_UDP_PKTS
+                                                                                  : MAX_NUM_OF_TCP_PKTS;
 
-    flow_to_process->detected_l7_protocol = ndpi_detection_process_packet(
-        workflow->ndpi_struct, flow_to_process->ndpi_flow, ip != NULL ? (uint8_t*)ip : (uint8_t*)ip6, ip_size, time_ms,
-        NULL);
+            if (flow_to_process->num_of_pkts > max_num_pkts) {
+                uint8_t proto_guessed = 0;
 
-    if (ndpi_is_protocol_detected(flow_to_process->detected_l7_protocol) != 0
-        && flow_to_process->detection_completed == 0) {
-        if (flow_to_process->detected_l7_protocol.proto.master_protocol != NDPI_PROTOCOL_UNKNOWN
-            || flow_to_process->detected_l7_protocol.proto.app_protocol != NDPI_PROTOCOL_UNKNOWN) {
-            flow_to_process->detection_completed = 1;
-            workflow->detected_flow_protocols++;
+                flow_to_process->detected_l7_protocol = ndpi_detection_giveup(
+                    workflow->ndpi_struct, flow_to_process->ndpi_flow, &proto_guessed);
+                flow_to_process->detection_completed = true;
+                if (ndpi_is_proto_unknown(flow_to_process->detected_l7_protocol.proto)) {
+                    flow_to_process->detection_completed = false;
+                }
+                flow_to_process->ready_to_dump = true;
+            }
+        }
 
+        if (flow_to_process->ready_to_dump) {
             uint32_t json_str_len = 0;
-            ndpi_reset_serializer(&workflow->json_serializer);
             ndpi_flow2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->l3_type,
                            flow_to_process->l4_protocol, 0, flow_to_process->ip_tuple.v4.src,
                            flow_to_process->ip_tuple.v4.dst, (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.src,
                            (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.dst, htons(flow_to_process->src_port),
                            htons(flow_to_process->dst_port), flow_to_process->detected_l7_protocol,
-                           &workflow->json_serializer);
-            const char* json_str = ndpi_serializer_get_buffer(&workflow->json_serializer, &json_str_len);
-            send_to_collector_client(workflow->client, json_str, json_str_len);
+                           &workflow->flow_serializer);
+
+            char src_country[32] = {'\0'}, dst_country[32] = {'\0'};
+            char src_name[INET6_ADDRSTRLEN] = {'\0'}, dst_name[INET6_ADDRSTRLEN] = {'\0'};
+            uint32_t src_as = 0, dst_as = 0;
+
+            if (flow_to_process->l3_type == IPv4) {
+                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.src, src_name, sizeof(src_name));
+                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.dst, dst_name, sizeof(dst_name));
+
+                ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL,
+                                                 0);
+                ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL,
+                                                 0);
+
+                ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &src_as);
+                ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &dst_as);
+            }
+            ndpi_serialize_string_string(&workflow->flow_serializer, "src_country", src_country);
+            ndpi_serialize_string_string(&workflow->flow_serializer, "dst_country", dst_country);
+            ndpi_serialize_string_uint32(&workflow->flow_serializer, "src_as", src_as);
+            ndpi_serialize_string_uint32(&workflow->flow_serializer, "dst_as", dst_as);
+            ndpi_serialize_string_uint64(&workflow->flow_serializer, "last_seen", time_ms);
+            const char* json_str = ndpi_serializer_get_buffer(&workflow->flow_serializer, &json_str_len);
+            send_to_collector(workflow->client, json_str, json_str_len);
+            ndpi_reset_serializer(&workflow->flow_serializer);
         }
     }
 }

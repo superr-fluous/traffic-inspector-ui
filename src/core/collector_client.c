@@ -36,7 +36,7 @@ close_collector_client(collector_client_t* handle) {
 }
 
 void
-send_to_collector_client(collector_client_t* handle, const char* message, uint32_t message_len) {
+send_to_collector(collector_client_t* handle, const char* message, uint32_t message_len) {
     sendto(handle->socket_fd, message, message_len, 0, (const struct sockaddr*)handle->addr,
            sizeof(struct sockaddr_in));
 }

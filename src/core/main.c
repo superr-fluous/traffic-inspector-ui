@@ -24,6 +24,8 @@ typedef struct {
     char* name_of_device;
     char* collector_host;
     int collector_port;
+    char* path_to_country_db;
+    char* path_to_asn_db;
 } config_t;
 
 static worker_t* workers = NULL;
@@ -49,6 +51,10 @@ config_handler(void* user, const char* section, const char* name, const char* va
         config->collector_host = strdup(value);
     } else if (MATCH("common", "collector_port")) {
         config->collector_port = atoi(value);
+    } else if (MATCH("geoip", "country")) {
+        config->path_to_country_db = strdup(value);
+    } else if (MATCH("geoip", "asn")) {
+        config->path_to_asn_db = strdup(value);
     } else {
         return -1;
     }
@@ -80,7 +86,8 @@ setup_workers(const config_t* config) {
         workers[i].id = i;
         workers[i].number_of_workers = config->number_of_workers;
         if (!(workers[i].workflow = init_workflow(config->name_of_device, fanout_group_id, config->collector_host,
-                                                  config->collector_port))) {
+                                                  config->collector_port, config->path_to_country_db,
+                                                  config->path_to_asn_db))) {
             free(workers);
             fprintf(stderr, "Failed to allocate workflow\n");
             return -1;
@@ -132,10 +139,7 @@ main(int argc, char** argv) {
     printf("Launching workers...\n");
 
     if (setup_workers(&config) == -1) {
-        free(path_to_config);
-        free(config.name_of_device);
-        free(config.collector_host);
-        return 1;
+        goto out;
     }
 
     while (!atomic_load(&shutdown_requested)) {
@@ -144,8 +148,11 @@ main(int argc, char** argv) {
 
     stop_workers(&config);
 
+out:
     free(path_to_config);
     free(config.name_of_device);
     free(config.collector_host);
+    free(config.path_to_country_db);
+    free(config.path_to_asn_db);
     return 0;
 }
