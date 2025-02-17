@@ -7,6 +7,8 @@ API and implementation of the afpacket lib inspired by pcap project and [article
 
 * [nDPI](https://github.com/ntop/nDPI)
 * [inih](https://github.com/benhoyt/inih/tree/master)
+* [pcap](https://github.com/the-tcpdump-group/libpcap)
+* [maxminddb](https://github.com/maxmind/libmaxminddb)
 
 ## Project Structure
 
