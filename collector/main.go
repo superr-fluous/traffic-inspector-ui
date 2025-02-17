@@ -29,7 +29,7 @@ type FlowInfo struct {
 	DstIp          string                 `json:"dest_ip"`
 	SrcPort        uint16                 `json:"src_port"`
 	DstPort        uint16                 `json:"dst_port"`
-	IpV            uint8                  `json:"ipv"`
+	IpV            uint8                  `json:"ip"`
 	TcpFingerprint string                 `json:"tcp_fingerprint"`
 	Proto          string                 `json:"proto"`
 	SrcCountry     string                 `json:"src_country"`
