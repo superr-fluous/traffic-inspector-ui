@@ -527,7 +527,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
     }
 
     flow_to_process->num_of_pkts++;
-    flow_to_process->len_of_pkts += l4_len;
+    flow_to_process->len_of_pkts += header->len;
     /* update timestamps, important for timeout handling */
     if (flow_to_process->first_seen == 0) {
         flow_to_process->first_seen = time_ms;
@@ -599,7 +599,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         ndpi_serialize_string_uint64(&workflow->flow_serializer, "first_seen", flow_to_process->first_seen);
         ndpi_serialize_string_uint64(&workflow->flow_serializer, "last_seen", flow_to_process->last_seen);
         ndpi_serialize_string_uint64(&workflow->flow_serializer, "num_pkts", flow_to_process->num_of_pkts);
-        ndpi_serialize_string_uint64(&workflow->flow_serializer, "len_of_pkts", flow_to_process->len_of_pkts);
+        ndpi_serialize_string_uint64(&workflow->flow_serializer, "len_pkts", flow_to_process->len_of_pkts);
         const char* json_str = ndpi_serializer_get_buffer(&workflow->flow_serializer, &json_str_len);
         send_to_collector(workflow->client, json_str, json_str_len);
         ndpi_reset_serializer(&workflow->flow_serializer);
