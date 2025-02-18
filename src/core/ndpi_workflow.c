@@ -1,4 +1,5 @@
 #include "ndpi_workflow.h"
+#include "utils.h"
 
 #include <linux/if_ether.h>
 #include <time.h>
@@ -108,6 +109,9 @@ init_workflow(const char* name_of_device, int fanout_group_id, const char* colle
         free_workflow(&workflow);
         return NULL;
     }
+
+    ndpi_set_config(workflow->ndpi_struct, "dns", "subclassification", "1");
+    ndpi_set_config(workflow->ndpi_struct, "tls", "application_blocks_tracking", "1");
 
     if (ndpi_load_geoip(workflow->ndpi_struct, path_to_country_db, path_to_asn_db) < 0) {
         free_workflow(&workflow);
@@ -317,7 +321,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
 
     memset(&flow, 0, sizeof(flow));
 
-    time_ms = ((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION + header->ts.tv_usec / (1000000 / TICK_RESOLUTION);
+    time_ms = (((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION + header->ts.tv_usec / (1000000 / TICK_RESOLUTION)) / 1000;
     workflow->last_time = time_ms;
 
     __check_for_idle_flows(workflow);
@@ -579,25 +583,91 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
                        htons(flow_to_process->dst_port), flow_to_process->detected_l7_protocol,
                        &workflow->flow_serializer);
 
-        char src_country[32] = {'\0'}, dst_country[32] = {'\0'};
+        char src_country[32] = {'\0'}, dst_country[32] = {'\0'}, src_as[32] = {'\0'}, dst_as[32] = {'\0'},
+             first_seen[50] = {'\0'}, last_seen[50] = {'\0'};
         char src_name[INET6_ADDRSTRLEN] = {'\0'}, dst_name[INET6_ADDRSTRLEN] = {'\0'};
-        uint32_t src_as = 0, dst_as = 0;
+        uint32_t as = 0;
+        const char *local = "local";
+        const char *unknown = "unknown";
 
-        inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.src, src_name, sizeof(src_name));
-        inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.dst, dst_name, sizeof(dst_name));
+        convert_timestamp_to_datetime(flow_to_process->first_seen, first_seen, sizeof(first_seen));
+        convert_timestamp_to_datetime(flow_to_process->last_seen, last_seen, sizeof(first_seen));
 
-        ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL, 0);
-        ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL, 0);
+        if (flow_to_process->l3_type == IPv4) {
+            if (is_private_ipv4(ntohl(flow_to_process->ip_tuple.v4.src))) {
+                memcpy(src_country, local, strlen(local));
+                memcpy(src_as, local, strlen(local));
+            } else {
+                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.src, src_name, sizeof(src_name));
+                ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL, 0);
+                if(src_country[0] == '\0') {
+                    memcpy(src_country, unknown, strlen(unknown));
+                }
+                ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &as);
+                if (as == 0) {
+                    memcpy(src_as, unknown, strlen(unknown));
+                } else {
+                    ndpi_snprintf(src_as, sizeof(src_as), "AS%lu", as);
+                }
+            }
 
-        ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &src_as);
-        ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &dst_as);
+            if (is_private_ipv4(ntohl(flow_to_process->ip_tuple.v4.dst))) {
+                memcpy(dst_country, local, strlen(local));
+                memcpy(dst_as, local, strlen(local));
+            } else {
+                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.dst, dst_name, sizeof(dst_name));
+                ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL, 0);
+                if(dst_country[0] == '\0') {
+                    memcpy(dst_country, unknown, strlen(unknown));
+                }
+                ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &as);
+                if (as == 0) {
+                    memcpy(dst_as, unknown, strlen(unknown));
+                } else {
+                    ndpi_snprintf(dst_as, sizeof(dst_as), "AS%lu", as);
+                }
+            }
+        } else {
+            if (is_private_ipv6(bswap_64(flow_to_process->ip_tuple.v6.src[0]))) {
+                memcpy(src_country, local, strlen(local));
+            } else {
+                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v6.src, src_name, sizeof(src_name));
+                ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL, 0);
+                if(src_country[0] == '\0') {
+                    memcpy(src_country, unknown, strlen(unknown));
+                }
+                ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &as);
+                if (as == 0) {
+                    memcpy(src_as, unknown, strlen(unknown));
+                } else {
+                    ndpi_snprintf(src_as, sizeof(src_as), "AS%lu", as);
+                }
+            }
 
+            if (is_private_ipv6(bswap_64(flow_to_process->ip_tuple.v6.dst[0]))) {
+                memcpy(dst_country, local, strlen(local));
+            } else {
+                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v6.dst, dst_name, sizeof(dst_name));
+                ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL, 0);
+                if(dst_country[0] == '\0') {
+                    memcpy(dst_country, unknown, strlen(unknown));
+                }
+                ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &as);
+                if (as == 0) {
+                    memcpy(dst_as, unknown, strlen(unknown));
+                } else {
+                    ndpi_snprintf(dst_as, sizeof(dst_as), "AS%lu", as);
+                }
+            }
+        }
+
+    
         ndpi_serialize_string_string(&workflow->flow_serializer, "src_country", src_country);
         ndpi_serialize_string_string(&workflow->flow_serializer, "dst_country", dst_country);
-        ndpi_serialize_string_uint32(&workflow->flow_serializer, "src_as", src_as);
-        ndpi_serialize_string_uint32(&workflow->flow_serializer, "dst_as", dst_as);
-        ndpi_serialize_string_uint64(&workflow->flow_serializer, "first_seen", flow_to_process->first_seen);
-        ndpi_serialize_string_uint64(&workflow->flow_serializer, "last_seen", flow_to_process->last_seen);
+        ndpi_serialize_string_string(&workflow->flow_serializer, "src_as", src_as);
+        ndpi_serialize_string_string(&workflow->flow_serializer, "dst_as", dst_as);
+        ndpi_serialize_string_string(&workflow->flow_serializer, "first_seen", first_seen);
+        ndpi_serialize_string_string(&workflow->flow_serializer, "last_seen", last_seen);
         ndpi_serialize_string_uint64(&workflow->flow_serializer, "num_pkts", flow_to_process->num_of_pkts);
         ndpi_serialize_string_uint64(&workflow->flow_serializer, "len_pkts", flow_to_process->len_of_pkts);
         const char* json_str = ndpi_serializer_get_buffer(&workflow->flow_serializer, &json_str_len);

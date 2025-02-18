@@ -22,7 +22,7 @@ set(PCAP_LIB "${PCAP_INSTALL_DIR}/lib/libpcap.a")
 
 
 if(DEBUG)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -g -O0 -fsanitize=address -fno-omit-frame-pointer")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -g -O0 -fsanitize=address -fno-omit-frame-pointer  -flto")
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 endif(DEBUG)
 
@@ -47,14 +47,14 @@ ExternalProject_Add(libpcap
 
 ExternalProject_Add(libndpi
     SOURCE_DIR ${NDPI_SRC_DIR}
-    CONFIGURE_COMMAND cd ${NDPI_SRC_DIR} && ./autogen.sh --with-maxminddb --with-only-libndpi --with-lto-and-gold-linker --prefix=${NDPI_INSTALL_DIR}
-    BUILD_COMMAND cd ${NDPI_SRC_DIR} && $(MAKE) CC="${CMAKE_C_COMPILER}"
+    CONFIGURE_COMMAND cd ${NDPI_SRC_DIR} && ./autogen.sh --with-maxminddb --with-only-libndpi --with-lto-and-gold-linker --prefix=${NDPI_INSTALL_DIR} CC=${CMAKE_C_COMPILER}
+    BUILD_COMMAND cd ${NDPI_SRC_DIR} && $(MAKE)
     INSTALL_COMMAND cd ${NDPI_SRC_DIR} && $(MAKE) install
 )
 
 include_directories("${NDPI_INSTALL_DIR}/include/ndpi/")
 include_directories("${INIH_SRC_DIR}")
 
-add_executable(TrafficInspector src/core/main.c src/core/afpacket.c src/core/ndpi_workflow.c src/core/collector_client.c third_party/libinih/ini.c)
+add_executable(TrafficInspector src/core/main.c src/core/afpacket.c src/core/ndpi_workflow.c src/core/utils.c src/core/collector_client.c third_party/libinih/ini.c)
 
 target_link_libraries(TrafficInspector PUBLIC ${NDPI_LIB} ${MAXMINDDB_LIB} ${PCAP_LIB} -lpthread -lm)

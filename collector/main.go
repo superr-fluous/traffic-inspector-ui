@@ -34,10 +34,10 @@ type FlowInfo struct {
 	Proto          string                 `json:"proto"`
 	SrcCountry     string                 `json:"src_country"`
 	DstCountry     string                 `json:"dst_country"`
-	SrcAS          uint32                 `json:"src_as"`
-	DstAS          uint32                 `json:"dst_as"`
-	FirstSeen      uint64                 `json:"first_seen"`
-	LastSeen       uint64                 `json:"last_seen"`
+	SrcAS          string                 `json:"src_as"`
+	DstAS          string                 `json:"dst_as"`
+	FirstSeen      string                 `json:"first_seen"`
+	LastSeen       string                 `json:"last_seen"`
 	NumPkts        uint64                 `json:"num_pkts"`
 	LenPkts        uint64                 `json:"len_pkts"`
 	Ndpi           map[string]interface{} `json:"ndpi"`
@@ -134,13 +134,15 @@ func (pg *postgres) InsertFlowInfo(ctx context.Context, info FlowInfo) (err erro
 func (pg *postgres) UpgradeFlowInfo(ctx context.Context, info FlowInfo, id int) (err error) {
 	query := `UPDATE flow_info SET last_seen = @last_seen,
 					num_pkts = @num_pkts,
-					len_pkts = @len_pkts 
+					len_pkts = @len_pkts,
+					ndpi = @ndpi 
 					WHERE id = @id`
 
 	args := pgx.NamedArgs{
 		"last_seen": info.LastSeen,
 		"num_pkts":  info.NumPkts,
 		"len_pkts":  info.LenPkts,
+		"ndpi":      info.Ndpi,
 		"id":        id,
 	}
 
@@ -243,6 +245,8 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
+
+	defer pg.Close()
 
 	err = server(ctx, os.Getenv("COLLECTOR_URL"), pg)
 
