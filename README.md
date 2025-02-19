@@ -10,6 +10,14 @@ API and implementation of the afpacket lib inspired by pcap project and [article
 * [pcap](https://github.com/the-tcpdump-group/libpcap)
 * [maxminddb](https://github.com/maxmind/libmaxminddb)
 
+## SAST Tools
+
+[PVS-Studio](https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source) - static analyzer for C, C++, C#, and Java code.
+
+[Ruff](https://github.com/astral-sh/ruff) - static analyzer for Python.
+
+[WPS](https://github.com/wemake-services/wemake-python-styleguide) - static analyzer for Python.
+
 ## Project Structure
 
 ### Core
@@ -61,7 +69,3 @@ Contributions are welcome! Please fork this repository and submit a pull request
 ---
 
 **License:** [MIT](LICENSE)
-
-## SAST Tools
-
-[PVS-Studio](https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source) - static analyzer for C, C++, C#, and Java code.
