@@ -13,9 +13,7 @@ API and implementation of the afpacket lib inspired by pcap project and [article
 ## SAST Tools
 
 * [PVS-Studio](https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source) - static analyzer for C, C++, C#, and Java code.
-
 * [Ruff](https://github.com/astral-sh/ruff) - static analyzer for Python.
-
 * [WPS](https://github.com/wemake-services/wemake-python-styleguide) - static analyzer for Python.
 
 ## Project Structure
