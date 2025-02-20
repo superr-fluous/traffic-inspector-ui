@@ -1,0 +1,50 @@
+name: Check python sources
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  release:
+    types: [created]
+jobs:
+  sast:
+    name: SAST (ubuntu latest)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install poetry
+        run: |
+          curl -sSL 'https://install.python-poetry.org' | python
+
+          # Adding `poetry` to `$PATH`:
+          echo "$HOME/.poetry/bin" >> "$GITHUB_PATH"
+      - name: Install dependencies
+        run: |
+          poetry config virtualenvs.in-project true
+          poetry run pip install -U pip
+          poetry install
+      - name: Run RUFF
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: "./backend"
+          version: "latest"
+      - name: Run WPS
+        uses: wemake-services/wemake-python-styleguide@master
+        with:
+          reporter: 'github-pr-review'
+          path: './backend'
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
