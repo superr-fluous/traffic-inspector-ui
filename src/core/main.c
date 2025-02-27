@@ -11,55 +11,17 @@
 #include "ini.h"
 
 #include "afpacket.h"
+#include "config.h"
+#include "dpi_worker.h"
 #include "ndpi_workflow.h"
-
-#define MATCH(s, n) strcmp(section, s) == 0 && strcmp(name, n) == 0
 
 const char* HELP = "TrafficInspector - simple packet inspection solution based on nDPI\n"
                    "\t-h           Help\n"
                    "\t-c path      Path to config file.\n";
 
-typedef struct {
-    uint8_t number_of_workers;
-    char* name_of_device;
-    char* collector_host;
-    int collector_port;
-    char* path_to_country_db;
-    char* path_to_asn_db;
-} config_t;
-
-static worker_t* workers = NULL;
+static dpi_worker_t* dpi_workers = NULL;
 
 static atomic_bool shutdown_requested = false;
-
-static void*
-run_worker(void* args) {
-    worker_t* worker = (worker_t*)args;
-    printf("Starting thread [%d]\n", worker->id);
-    run_afpacket_loop(worker->workflow->handle, ndpi_process_packet, (uint8_t*)worker);
-    return NULL;
-}
-
-static int
-config_handler(void* user, const char* section, const char* name, const char* value) {
-    config_t* config = (config_t*)user;
-    if (MATCH("common", "workers")) {
-        config->number_of_workers = atoi(value);
-    } else if (MATCH("common", "device")) {
-        config->name_of_device = strdup(value);
-    } else if (MATCH("common", "collector_host")) {
-        config->collector_host = strdup(value);
-    } else if (MATCH("common", "collector_port")) {
-        config->collector_port = atoi(value);
-    } else if (MATCH("geoip", "country")) {
-        config->path_to_country_db = strdup(value);
-    } else if (MATCH("geoip", "asn")) {
-        config->path_to_asn_db = strdup(value);
-    } else {
-        return -1;
-    }
-    return 1;
-}
 
 static void
 sig_handler(int sig) {
@@ -74,39 +36,31 @@ setup_workers(const config_t* config) {
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
     sigaction(SIGINT, &action, NULL);
+    sigaction(SIGTERM, &action, NULL);
 
     int fanout_group_id = getpid() & 0xffff;
 
-    if (!(workers = (worker_t*)calloc(config->number_of_workers, sizeof(worker_t)))) {
-        fprintf(stderr, "Failed to allocate workers\n");
+    if (!(dpi_workers = init_dpi_workers(config, fanout_group_id))) {
+        fprintf(stderr, "Failed to init dpi worker\n");
         return -1;
     }
 
     for (int i = 0; i < config->number_of_workers; i++) {
-        workers[i].id = i;
-        workers[i].number_of_workers = config->number_of_workers;
-        if (!(workers[i].workflow = init_workflow(config->name_of_device, fanout_group_id, config->collector_host,
-                                                  config->collector_port, config->path_to_country_db,
-                                                  config->path_to_asn_db))) {
-            free(workers);
-            fprintf(stderr, "Failed to allocate workflow\n");
-            return -1;
-        }
+        printf("Starting thread [%d]\n", i);
+        pthread_create(&dpi_workers[i].thread, NULL, run_dpi_worker, (void*)&dpi_workers[i]);
     }
 
-    for (int i = 0; i < config->number_of_workers; i++) {
-        pthread_create(&workers[i].thread, NULL, run_worker, (void*)&workers[i]);
-    }
     return 0;
 }
 
 static void
 stop_workers(const config_t* config) {
     for (int i = 0; i < config->number_of_workers; i++) {
-        pthread_kill(workers[i].thread, SIGINT);
-        pthread_join(workers[i].thread, NULL);
-        free_workflow(&workers[i].workflow);
+        pthread_kill(dpi_workers[i].thread, SIGINT);
+        pthread_join(dpi_workers[i].thread, NULL);
     }
+
+    deinit_dpi_workers(dpi_workers);
 }
 
 int
@@ -150,9 +104,6 @@ main(int argc, char** argv) {
 
 out:
     free(path_to_config);
-    free(config.name_of_device);
-    free(config.collector_host);
-    free(config.path_to_country_db);
-    free(config.path_to_asn_db);
+    deinit_config(&config);
     return 0;
 }

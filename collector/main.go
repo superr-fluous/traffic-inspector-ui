@@ -1,19 +1,17 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	zmq "github.com/pebbe/zmq4"
 )
-
-const maxBufferSize = 65536
 
 type postgres struct {
 	db *pgxpool.Pool
@@ -23,6 +21,8 @@ var (
 	pgInstance *postgres
 	pgOnce     sync.Once
 )
+
+const size_of_queue = 1000
 
 type FlowInfo struct {
 	SrcIp          string                 `json:"src_ip"`
@@ -179,53 +179,68 @@ func (pg *postgres) GetFlowID(ctx context.Context, info FlowInfo) int {
 	return id
 }
 
-func server(ctx context.Context, address string, pg *postgres) (err error) {
-	pc, err := net.ListenPacket("udp", address)
-	if err != nil {
-		return
-	}
+func server(ctx context.Context, endpoint string, num_of_endpoints int, pg *postgres) (err error) {
+	pullers := make([]*zmq.Socket, num_of_endpoints)
+	default_port := 5556
 
-	defer pc.Close()
-
-	doneChan := make(chan error, 1)
-	buffer := make([]byte, maxBufferSize)
-
-	go func() {
-		for {
-			_, _, err := pc.ReadFrom(buffer)
-			if err != nil {
-				doneChan <- err
-				return
-			}
-
-			var info FlowInfo
-			reader := bytes.NewReader(buffer)
-			err = json.NewDecoder(reader).Decode(&info)
-			if err != nil {
-				doneChan <- err
-				return
-			}
-
-			id := pg.GetFlowID(ctx, info)
-
-			if id != 0 {
-				err = pg.UpgradeFlowInfo(ctx, info, id)
-
-				if err != nil {
-					doneChan <- err
-					return
-				}
-			} else {
-
-				err = pg.InsertFlowInfo(ctx, info)
-
-				if err != nil {
-					doneChan <- err
-					return
-				}
-			}
+	for i := 0; i < num_of_endpoints; i++ {
+		puller, err := zmq.NewSocket(zmq.PULL)
+		if err != nil {
+			return err
 		}
-	}()
+		defer puller.Close()
+
+		err = puller.SetRcvhwm(size_of_queue)
+		if err != nil {
+			return err
+		}
+		zmq_endpoint := fmt.Sprintf("%s:%d", endpoint, default_port)
+		fmt.Println(zmq_endpoint)
+		err = puller.Connect(zmq_endpoint)
+		if err != nil {
+			return err
+		}
+		pullers[i] = puller
+		default_port++
+	}
+	doneChan := make(chan error, 1)
+
+	for i := 0; i < num_of_endpoints; i++ {
+		go func() {
+			for {
+				msg, err := pullers[i].Recv(0)
+				if err != nil {
+					doneChan <- err
+					continue
+				}
+
+				var info FlowInfo
+				err = json.Unmarshal([]byte(msg), &info)
+				if err != nil {
+					doneChan <- err
+					return
+				}
+				id := pg.GetFlowID(ctx, info)
+
+				if id != 0 {
+					err = pg.UpgradeFlowInfo(ctx, info, id)
+
+					if err != nil {
+						doneChan <- err
+						return
+					}
+				} else {
+
+					err = pg.InsertFlowInfo(ctx, info)
+
+					if err != nil {
+						doneChan <- err
+						return
+					}
+				}
+			}
+		}()
+	}
 
 	select {
 	case <-ctx.Done():
@@ -248,7 +263,14 @@ func main() {
 
 	defer pg.Close()
 
-	err = server(ctx, os.Getenv("COLLECTOR_URL"), pg)
+	num_of_endpoints, err := strconv.Atoi(os.Getenv("NUM_OF_ENDPOINTS"))
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+
+	err = server(ctx, os.Getenv("ZMQ_ENDPOINT"), num_of_endpoints, pg)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
