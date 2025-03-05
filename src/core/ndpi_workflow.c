@@ -2,6 +2,7 @@
 #include "dpi_worker.h"
 #include "utils.h"
 
+#include <uuid/uuid.h>
 #include <zmq.h>
 
 #include <errno.h>
@@ -22,13 +23,21 @@
 enum IP_TYPE { IPv4 = 4, IPv6 = 6 };
 
 typedef struct {
-    uint64_t num_of_pkts;
-    uint64_t len_of_pkts;
+    uint64_t src_num_of_pkts;
+    uint64_t dst_num_of_pkts;
+    uint64_t src_len_of_pkts;
+    uint64_t dst_len_of_pkts;
     uint64_t first_seen;
     uint64_t last_seen;
     uint64_t hashval;
 
+    char* src_os;
+    char* dst_os;
+    char uuid[37];
     enum IP_TYPE l3_type;
+
+    uint8_t src_mac[6];
+    uint8_t dst_mac[6];
 
     union {
         struct {
@@ -52,15 +61,18 @@ typedef struct {
     uint16_t src_port;
     uint16_t dst_port;
 
+    bool is_src_to_dst;
     uint8_t is_midstream_flow : 1;
     uint8_t flow_fin_ack_seen : 1;
     uint8_t flow_ack_seen     : 1;
     bool detection_completed;
     bool ready_to_dump;
+    bool dpi_info_dumped;
     uint8_t l4_protocol;
 
     struct ndpi_proto detected_l7_protocol;
     struct ndpi_flow_struct* ndpi_flow;
+    ndpi_serializer flow_serializer;
 } ndpi_flow_info_t;
 
 ndpi_workflow_t*
@@ -100,11 +112,6 @@ init_workflow(const char* name_of_device, int fanout_group_id, const char* path_
         return NULL;
     }
 
-    if (ndpi_init_serializer(&workflow->flow_serializer, ndpi_serialization_format_json) == -1) {
-        free_workflow(workflow);
-        return NULL;
-    }
-
     NDPI_PROTOCOL_BITMASK protos;
     NDPI_BITMASK_SET_ALL(protos);
     if (ndpi_set_protocol_detection_bitmask2(workflow->ndpi_struct, &protos) == -1) {
@@ -132,6 +139,9 @@ __ndpi_flow_info_free(void* const node) {
     ndpi_flow_info_t* const flow = (ndpi_flow_info_t*)node;
 
     ndpi_flow_free(flow->ndpi_flow);
+    ndpi_term_serializer(&flow->flow_serializer);
+    ndpi_free(flow->src_os);
+    ndpi_free(flow->dst_os);
     ndpi_free(flow);
 }
 
@@ -146,28 +156,9 @@ free_workflow(ndpi_workflow_t* workflow) {
 
     afpacket_close(workflow->handle);
     deinit_zmq_log(workflow->socket);
-    ndpi_term_serializer(&workflow->flow_serializer);
     ndpi_free(workflow->ndpi_flows_active);
     ndpi_free(workflow->ndpi_flows_idle);
     ndpi_free(workflow);
-}
-
-static int
-__ip_tuple_to_string(ndpi_flow_info_t const* const flow, char* const src_addr_str, size_t src_addr_len,
-                     char* const dst_addr_str, size_t dst_addr_len) {
-    switch (flow->l3_type) {
-        case IPv4:
-            return inet_ntop(AF_INET, (struct sockaddr_in*)&flow->ip_tuple.v4.src, src_addr_str, src_addr_len) != NULL
-                   && inet_ntop(AF_INET, (struct sockaddr_in*)&flow->ip_tuple.v4.dst, dst_addr_str, dst_addr_len)
-                          != NULL;
-        case IPv6:
-            return inet_ntop(AF_INET6, (struct sockaddr_in6*)&flow->ip_tuple.v6.src[0], src_addr_str, src_addr_len)
-                       != NULL
-                   && inet_ntop(AF_INET6, (struct sockaddr_in6*)&flow->ip_tuple.v6.dst[0], dst_addr_str, dst_addr_len)
-                          != NULL;
-    }
-
-    return 0;
 }
 
 static int
@@ -233,10 +224,7 @@ __ndpi_idle_scan_walker(void const* const A, ndpi_VISIT which, int deep, void* c
 
     if (which == ndpi_preorder || which == ndpi_leaf) {
         if ((flow->flow_fin_ack_seen == 1 && flow->flow_ack_seen == 1)
-            || flow->last_seen + MAX_IDLE_TIME < workflow->last_time) {
-            char src_addr_str[INET6_ADDRSTRLEN + 1];
-            char dst_addr_str[INET6_ADDRSTRLEN + 1];
-            __ip_tuple_to_string(flow, src_addr_str, sizeof(src_addr_str), dst_addr_str, sizeof(dst_addr_str));
+            || flow->last_seen + MAX_IDLE_TIME < get_current_time_ms()) {
             workflow->ndpi_flows_idle[workflow->cur_idle_flows++] = flow;
             workflow->total_idle_flows++;
         }
@@ -283,6 +271,119 @@ __check_for_idle_flows(ndpi_workflow_t* const workflow) {
 }
 
 void
+serialize_dpi_info(ndpi_workflow_t* workflow, ndpi_flow_info_t* flow) {
+    char src_country[32] = {'\0'}, dst_country[32] = {'\0'}, src_as[32] = {'\0'}, dst_as[32] = {'\0'}, mac[19] = {'\0'};
+    char src_name[INET6_ADDRSTRLEN] = {'\0'}, dst_name[INET6_ADDRSTRLEN] = {'\0'};
+    uint32_t as = 0;
+    const char* local = "local";
+    const char* unknown = "unknown";
+
+    ndpi_flow2json(workflow->ndpi_struct, flow->ndpi_flow, flow->l3_type, flow->l4_protocol, 0, flow->ip_tuple.v4.src,
+                   flow->ip_tuple.v4.dst, (struct ndpi_in6_addr*)flow->ip_tuple.v6.src,
+                   (struct ndpi_in6_addr*)flow->ip_tuple.v6.dst, htons(flow->src_port), htons(flow->dst_port),
+                   flow->detected_l7_protocol, &flow->flow_serializer);
+
+    if (flow->l3_type == IPv4) {
+        if (is_private_ipv4(ntohl(flow->ip_tuple.v4.src))) {
+            strncpy(src_country, local, strlen(local));
+            strncpy(src_as, local, strlen(local));
+        } else {
+            inet_ntop(AF_INET, &flow->ip_tuple.v4.src, src_name, sizeof(src_name));
+            ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL, 0);
+            if (src_country[0] == '\0') {
+                strncpy(src_country, unknown, strlen(unknown));
+            }
+            ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &as);
+            if (as == 0) {
+                strncpy(src_as, unknown, strlen(unknown));
+            } else {
+                ndpi_snprintf(src_as, sizeof(src_as), "AS%u", as);
+            }
+        }
+
+        if (is_private_ipv4(ntohl(flow->ip_tuple.v4.dst))) {
+            strncpy(dst_country, local, strlen(local));
+            strncpy(dst_as, local, strlen(local));
+        } else {
+            inet_ntop(AF_INET, &flow->ip_tuple.v4.dst, dst_name, sizeof(dst_name));
+            ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL, 0);
+            if (dst_country[0] == '\0') {
+                strncpy(dst_country, unknown, strlen(unknown));
+            }
+            ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &as);
+            if (as == 0) {
+                strncpy(dst_as, unknown, strlen(unknown));
+            } else {
+                ndpi_snprintf(dst_as, sizeof(dst_as), "AS%u", as);
+            }
+        }
+    } else {
+        if (is_private_ipv6(bswap_64(flow->ip_tuple.v6.src[0]))) {
+            strncpy(src_country, local, strlen(local));
+            strncpy(src_as, local, strlen(local));
+        } else {
+            inet_ntop(AF_INET, &flow->ip_tuple.v6.src, src_name, sizeof(src_name));
+            ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL, 0);
+            if (src_country[0] == '\0') {
+                strncpy(src_country, unknown, strlen(unknown));
+            }
+            ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &as);
+            if (as == 0) {
+                strncpy(src_as, unknown, strlen(unknown));
+            } else {
+                ndpi_snprintf(src_as, sizeof(src_as), "AS%u", as);
+            }
+        }
+
+        if (is_private_ipv6(bswap_64(flow->ip_tuple.v6.dst[0]))) {
+            strncpy(dst_country, local, strlen(local));
+            strncpy(dst_as, local, strlen(local));
+        } else {
+            inet_ntop(AF_INET, &flow->ip_tuple.v6.dst, dst_name, sizeof(dst_name));
+            ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL, 0);
+            if (dst_country[0] == '\0') {
+                strncpy(dst_country, unknown, strlen(unknown));
+            }
+            ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &as);
+            if (as == 0) {
+                strncpy(dst_as, unknown, strlen(unknown));
+            } else {
+                ndpi_snprintf(dst_as, sizeof(dst_as), "AS%u", as);
+            }
+        }
+    }
+
+    if (flow->ndpi_flow->tcp.fingerprint) {
+        ndpi_serialize_string_string(&flow->flow_serializer, "src_os",
+                                     ndpi_print_os_hint(flow->ndpi_flow->tcp.os_hint));
+    }
+
+    mac_to_string(flow->src_mac, mac);
+    ndpi_serialize_string_string(&flow->flow_serializer, "src_mac", mac);
+    mac_to_string(flow->dst_mac, mac);
+    ndpi_serialize_string_string(&flow->flow_serializer, "dst_mac", mac);
+    ndpi_serialize_string_string(&flow->flow_serializer, "uuid", flow->uuid);
+    ndpi_serialize_string_string(&flow->flow_serializer, "src_country", src_country);
+    ndpi_serialize_string_string(&flow->flow_serializer, "dst_country", dst_country);
+    ndpi_serialize_string_string(&flow->flow_serializer, "src_as", src_as);
+    ndpi_serialize_string_string(&flow->flow_serializer, "dst_as", dst_as);
+}
+
+void
+serialize_stats_info(ndpi_flow_info_t* flow) {
+    char first_seen[50] = {'\0'}, last_seen[50] = {'\0'};
+    convert_timestamp_to_datetime(flow->first_seen / 1000, first_seen, sizeof(first_seen));
+    convert_timestamp_to_datetime(flow->last_seen / 1000, last_seen, sizeof(first_seen));
+    ndpi_serialize_string_string(&flow->flow_serializer, "uuid", flow->uuid);
+    ndpi_serialize_string_string(&flow->flow_serializer, "first_seen", first_seen);
+    ndpi_serialize_string_string(&flow->flow_serializer, "last_seen", last_seen);
+    ndpi_serialize_string_uint64(&flow->flow_serializer, "src_num_pkts", flow->src_num_of_pkts);
+    ndpi_serialize_string_uint64(&flow->flow_serializer, "dst_num_pkts", flow->dst_num_of_pkts);
+    ndpi_serialize_string_uint64(&flow->flow_serializer, "src_len_pkts", flow->src_len_of_pkts);
+    ndpi_serialize_string_uint64(&flow->flow_serializer, "dst_len_pkts", flow->dst_len_of_pkts);
+}
+
+void
 ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, const uint8_t* packet) {
     dpi_worker_t* worker = (dpi_worker_t*)args;
 
@@ -319,8 +420,8 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
 
     memset(&flow, 0, sizeof(flow));
 
-    time_ms = (((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION + header->ts.tv_usec / (1000000 / TICK_RESOLUTION))
-              / 1000;
+    time_ms = (((uint64_t)header->ts.tv_sec) * TICK_RESOLUTION + header->ts.tv_usec / (1000000 / TICK_RESOLUTION));
+
     workflow->last_time = time_ms;
 
     __check_for_idle_flows(workflow);
@@ -331,6 +432,8 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
     ethernet = (struct ndpi_ethhdr*)&packet[eth_offset];
     ip_offset = sizeof(struct ndpi_ethhdr) + eth_offset;
     type = ntohs(ethernet->h_proto);
+    memcpy(flow.src_mac, ethernet->h_source, sizeof(flow.src_mac));
+    memcpy(flow.dst_mac, ethernet->h_dest, sizeof(flow.dst_mac));
     switch (type) {
         case ETH_P_IP: /* IPv4 */
             if (header->len < sizeof(struct ndpi_ethhdr) + sizeof(struct ndpi_iphdr)) {
@@ -457,9 +560,12 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         flow.hashval += flow.l4_protocol + flow.src_port + flow.dst_port;
     }
 
+    bool is_src_to_dst = true;
+
     hashed_index = flow.hashval % workflow->max_active_flows;
     tree_result = ndpi_tfind(&flow, &workflow->ndpi_flows_active[hashed_index], __ndpi_workflow_node_cmp);
     if (tree_result == NULL) {
+        is_src_to_dst = false;
         /* flow not found in btree: switch src <-> dst and try to find it again */
         const uint32_t orig_src_ip[4] = {flow.ip_tuple.u32.src[0], flow.ip_tuple.u32.src[1], flow.ip_tuple.u32.src[2],
                                          flow.ip_tuple.u32.src[3]};
@@ -498,6 +604,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
     }
 
     if (tree_result == NULL) {
+        is_src_to_dst = true;
         /* flow still not found, must be new */
         if (workflow->cur_active_flows == workflow->max_active_flows) {
             return;
@@ -515,8 +622,14 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
             return;
         }
         memset(flow_to_process->ndpi_flow, 0, SIZEOF_FLOW_STRUCT);
+        ndpi_init_serializer(&flow_to_process->flow_serializer, ndpi_serialization_format_json);
         flow_to_process->detection_completed = false;
         flow_to_process->ready_to_dump = false;
+        flow_to_process->src_os = NULL;
+        flow_to_process->dst_os = NULL;
+        uuid_t uuid;
+        uuid_generate_random(uuid);
+        uuid_unparse(uuid, flow_to_process->uuid);
         if (ndpi_tsearch(flow_to_process, &workflow->ndpi_flows_active[hashed_index], __ndpi_workflow_node_cmp)
             == NULL) {
             /* Possible Leak, but should not happen as we'd abort earlier. */
@@ -529,8 +642,14 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
         flow_to_process = *(ndpi_flow_info_t**)tree_result;
     }
 
-    flow_to_process->num_of_pkts++;
-    flow_to_process->len_of_pkts += header->len;
+    if (is_src_to_dst) {
+        flow_to_process->src_num_of_pkts++;
+        flow_to_process->src_len_of_pkts += header->len;
+    } else {
+        flow_to_process->dst_num_of_pkts++;
+        flow_to_process->dst_len_of_pkts += header->len;
+    }
+
     /* update timestamps, important for timeout handling */
     if (flow_to_process->first_seen == 0) {
         flow_to_process->first_seen = time_ms;
@@ -560,7 +679,7 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
             uint16_t max_num_pkts = (flow_to_process->l4_protocol == IPPROTO_UDP) ? MAX_NUM_OF_UDP_PKTS
                                                                                   : MAX_NUM_OF_TCP_PKTS;
 
-            if (flow_to_process->num_of_pkts > max_num_pkts) {
+            if (flow_to_process->src_num_of_pkts + flow_to_process->dst_num_of_pkts > max_num_pkts) {
                 uint8_t proto_guessed = 0;
 
                 flow_to_process->detected_l7_protocol = ndpi_detection_giveup(
@@ -575,107 +694,19 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
     }
     if (flow_to_process->ready_to_dump) {
         uint32_t json_str_len = 0;
-        ndpi_flow2json(workflow->ndpi_struct, flow_to_process->ndpi_flow, flow_to_process->l3_type,
-                       flow_to_process->l4_protocol, 0, flow_to_process->ip_tuple.v4.src,
-                       flow_to_process->ip_tuple.v4.dst, (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.src,
-                       (struct ndpi_in6_addr*)flow_to_process->ip_tuple.v6.dst, htons(flow_to_process->src_port),
-                       htons(flow_to_process->dst_port), flow_to_process->detected_l7_protocol,
-                       &workflow->flow_serializer);
+        if (!flow_to_process->dpi_info_dumped) {
+            serialize_dpi_info(workflow, flow_to_process);
+            serialize_stats_info(flow_to_process);
+            const char* json_str = ndpi_serializer_get_buffer(&flow_to_process->flow_serializer, &json_str_len);
 
-        char src_country[32] = {'\0'}, dst_country[32] = {'\0'}, src_as[32] = {'\0'}, dst_as[32] = {'\0'},
-             first_seen[50] = {'\0'}, last_seen[50] = {'\0'};
-        char src_name[INET6_ADDRSTRLEN] = {'\0'}, dst_name[INET6_ADDRSTRLEN] = {'\0'};
-        uint32_t as = 0;
-        const char* local = "local";
-        const char* unknown = "unknown";
-
-        convert_timestamp_to_datetime(flow_to_process->first_seen, first_seen, sizeof(first_seen));
-        convert_timestamp_to_datetime(flow_to_process->last_seen, last_seen, sizeof(first_seen));
-
-        if (flow_to_process->l3_type == IPv4) {
-            if (is_private_ipv4(ntohl(flow_to_process->ip_tuple.v4.src))) {
-                memcpy(src_country, local, strlen(local));
-                memcpy(src_as, local, strlen(local));
-            } else {
-                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.src, src_name, sizeof(src_name));
-                ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL,
-                                                 0);
-                if (src_country[0] == '\0') {
-                    memcpy(src_country, unknown, strlen(unknown));
-                }
-                ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &as);
-                if (as == 0) {
-                    memcpy(src_as, unknown, strlen(unknown));
-                } else {
-                    ndpi_snprintf(src_as, sizeof(src_as), "AS%lu", as);
-                }
-            }
-
-            if (is_private_ipv4(ntohl(flow_to_process->ip_tuple.v4.dst))) {
-                memcpy(dst_country, local, strlen(local));
-                memcpy(dst_as, local, strlen(local));
-            } else {
-                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v4.dst, dst_name, sizeof(dst_name));
-                ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL,
-                                                 0);
-                if (dst_country[0] == '\0') {
-                    memcpy(dst_country, unknown, strlen(unknown));
-                }
-                ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &as);
-                if (as == 0) {
-                    memcpy(dst_as, unknown, strlen(unknown));
-                } else {
-                    ndpi_snprintf(dst_as, sizeof(dst_as), "AS%lu", as);
-                }
-            }
-        } else {
-            if (is_private_ipv6(bswap_64(flow_to_process->ip_tuple.v6.src[0]))) {
-                memcpy(src_country, local, strlen(local));
-            } else {
-                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v6.src, src_name, sizeof(src_name));
-                ndpi_get_geoip_country_continent(workflow->ndpi_struct, src_name, src_country, sizeof(src_name), NULL,
-                                                 0);
-                if (src_country[0] == '\0') {
-                    memcpy(src_country, unknown, strlen(unknown));
-                }
-                ndpi_get_geoip_asn(workflow->ndpi_struct, src_name, &as);
-                if (as == 0) {
-                    memcpy(src_as, unknown, strlen(unknown));
-                } else {
-                    ndpi_snprintf(src_as, sizeof(src_as), "AS%lu", as);
-                }
-            }
-
-            if (is_private_ipv6(bswap_64(flow_to_process->ip_tuple.v6.dst[0]))) {
-                memcpy(dst_country, local, strlen(local));
-            } else {
-                inet_ntop(AF_INET, &flow_to_process->ip_tuple.v6.dst, dst_name, sizeof(dst_name));
-                ndpi_get_geoip_country_continent(workflow->ndpi_struct, dst_name, dst_country, sizeof(dst_name), NULL,
-                                                 0);
-                if (dst_country[0] == '\0') {
-                    memcpy(dst_country, unknown, strlen(unknown));
-                }
-                ndpi_get_geoip_asn(workflow->ndpi_struct, dst_name, &as);
-                if (as == 0) {
-                    memcpy(dst_as, unknown, strlen(unknown));
-                } else {
-                    ndpi_snprintf(dst_as, sizeof(dst_as), "AS%lu", as);
-                }
-            }
+            zmq_send(workflow->socket->pusher, json_str, strlen(json_str), ZMQ_DONTWAIT);
+            flow_to_process->dpi_info_dumped = true;
         }
-
-        ndpi_serialize_string_string(&workflow->flow_serializer, "src_country", src_country);
-        ndpi_serialize_string_string(&workflow->flow_serializer, "dst_country", dst_country);
-        ndpi_serialize_string_string(&workflow->flow_serializer, "src_as", src_as);
-        ndpi_serialize_string_string(&workflow->flow_serializer, "dst_as", dst_as);
-        ndpi_serialize_string_string(&workflow->flow_serializer, "first_seen", first_seen);
-        ndpi_serialize_string_string(&workflow->flow_serializer, "last_seen", last_seen);
-        ndpi_serialize_string_uint64(&workflow->flow_serializer, "num_pkts", flow_to_process->num_of_pkts);
-        ndpi_serialize_string_uint64(&workflow->flow_serializer, "len_pkts", flow_to_process->len_of_pkts);
-        const char* json_str = ndpi_serializer_get_buffer(&workflow->flow_serializer, &json_str_len);
+        serialize_stats_info(flow_to_process);
+        const char* json_str = ndpi_serializer_get_buffer(&flow_to_process->flow_serializer, &json_str_len);
 
         zmq_send(workflow->socket->pusher, json_str, strlen(json_str), ZMQ_DONTWAIT);
 
-        ndpi_reset_serializer(&workflow->flow_serializer);
+        ndpi_reset_serializer(&flow_to_process->flow_serializer);
     }
 }
