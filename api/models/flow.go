@@ -16,7 +16,7 @@ type FlowInfo struct {
 	DstIp          string         `json:"dest_ip"`
 	SrcPort        uint16         `json:"src_port"`
 	DstPort        uint16         `json:"dst_port"`
-	IpV            uint8          `json:"ip"`
+	IpV            uint8          `json:"ipv" gorm:"column:ipv"`
 	TcpFingerprint string         `json:"tcp_fingerprint"`
 	SrcOS          string         `json:"src_os"`
 	DstOS          string         `json:"dst_os"`
@@ -39,6 +39,8 @@ type FlowPreview struct {
 	LastSeen   time.Time `json:"last_seen"`
 	SrcIp      string    `json:"src_ip"`
 	DstIp      string    `json:"dst_ip"`
+	SrcPort    uint16    `json:"src_port"`
+	DstPort    uint16    `json:"dst_port"`
 	SrcCountry string    `json:"src_country"`
 	DstCountry string    `json:"dst_country"`
 	Protocol   string    `gorm:"column:protocol" json:"protocol"`
@@ -61,7 +63,7 @@ type FlowPreviewResponse struct {
 
 func GetFlowInfo(db *gorm.DB, id uuid.UUID) (*FlowInfo, error) {
 	var flow_info FlowInfo
-	err := db.First(&flow_info, "id = ?", id).Error
+	err := db.First(&flow_info, id).Error
 
 	return &flow_info, err
 }
@@ -79,6 +81,8 @@ func GetFlowsPreview(db *gorm.DB, limit int, offset int) (*FlowPreviewResponse, 
 			"last_seen",
 			"src_ip",
 			"dst_ip",
+			"src_port",
+			"dst_port",
 			"src_country",
 			"dst_country",
 			"ndpi->>'proto' AS protocol",

@@ -6,3 +6,4 @@ api/api
 test
 test_conf.ini
 build/*
+ui/node_modules/*

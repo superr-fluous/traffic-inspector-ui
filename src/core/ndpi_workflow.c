@@ -699,13 +699,30 @@ ndpi_process_packet(const uint8_t* args, const struct afpacket_pkthdr* header, c
             serialize_stats_info(flow_to_process);
             const char* json_str = ndpi_serializer_get_buffer(&flow_to_process->flow_serializer, &json_str_len);
 
-            zmq_send(workflow->socket->pusher, json_str, strlen(json_str), ZMQ_DONTWAIT);
+            while (zmq_send(workflow->socket->pusher, json_str, strlen(json_str), ZMQ_DONTWAIT) == -1) {
+                if (errno == EAGAIN) {
+                    usleep(1000);
+                    continue;
+                }
+                perror("zmq_send");
+                break;
+            }
+
             flow_to_process->dpi_info_dumped = true;
         }
         serialize_stats_info(flow_to_process);
         const char* json_str = ndpi_serializer_get_buffer(&flow_to_process->flow_serializer, &json_str_len);
 
-        zmq_send(workflow->socket->pusher, json_str, strlen(json_str), ZMQ_DONTWAIT);
+        while (zmq_send(workflow->socket->pusher, json_str, strlen(json_str), ZMQ_DONTWAIT) == -1) {
+            if (errno == EAGAIN) {
+                usleep(1000);
+                continue;
+            }
+            perror("zmq_send");
+            break;
+        }
+
+        
 
         ndpi_reset_serializer(&flow_to_process->flow_serializer);
     }
