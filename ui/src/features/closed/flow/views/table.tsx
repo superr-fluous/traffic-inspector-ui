@@ -74,6 +74,7 @@ const Table = () => {
 				maxWidth: "100%",
 				maxHeight: "100%",
 				overflow: "hidden",
+				backgroundColor: "#2f2f2f",
 			}}
 		>
 			<TableContainer
@@ -82,6 +83,8 @@ const Table = () => {
 					maxWidth: "100%",
 					maxHeight: "100%",
 					overflow: "hidden",
+					backgroundColor: "#2f2f2f",
+					color: "#faf0e6",
 				}}
 				component={Paper}
 				elevation={3}
@@ -89,11 +92,56 @@ const Table = () => {
 				<MUITable>
 					<TableHead>
 						<TableRow>
-							<TableCell sx={{ fontWeight: 600 }}>Last Seen</TableCell>
-							<TableCell sx={{ fontWeight: 600 }}>Source</TableCell>
-							<TableCell sx={{ fontWeight: 600 }}>Destination</TableCell>
-							<TableCell sx={{ fontWeight: 600 }}>Protocol</TableCell>
-							<TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
+							<TableCell
+								sx={{
+									fontWeight: 600,
+									color: "#faf0e6",
+									fontSize: "1.1rem",
+									letterSpacing: 1.15,
+								}}
+							>
+								Last Seen
+							</TableCell>
+							<TableCell
+								sx={{
+									fontWeight: 600,
+									color: "#faf0e6",
+									fontSize: "1.1rem",
+									letterSpacing: 1.15,
+								}}
+							>
+								Source
+							</TableCell>
+							<TableCell
+								sx={{
+									fontWeight: 600,
+									color: "#faf0e6",
+									fontSize: "1.1rem",
+									letterSpacing: 1.15,
+								}}
+							>
+								Destination
+							</TableCell>
+							<TableCell
+								sx={{
+									fontWeight: 600,
+									color: "#faf0e6",
+									fontSize: "1.1rem",
+									letterSpacing: 1.15,
+								}}
+							>
+								Protocol
+							</TableCell>
+							<TableCell
+								sx={{
+									fontWeight: 600,
+									color: "#faf0e6",
+									fontSize: "1.1rem",
+									letterSpacing: 1.15,
+								}}
+							>
+								Category
+							</TableCell>
 						</TableRow>
 					</TableHead>
 					{isLoading && (
@@ -106,11 +154,15 @@ const Table = () => {
 									justifyContent: "center",
 									height: "100%",
 									width: "100%",
-									bgcolor: "background.default",
+									bgcolor: "#2f2f2f",
 								}}
 							>
 								<div style={{ margin: "0.25rem" }}>
-									<CircularProgress size={60} thickness={4} />
+									<CircularProgress
+										style={{ color: "#cc9900" }}
+										size={60}
+										thickness={4}
+									/>
 								</div>
 							</Box>
 						</td>
@@ -143,7 +195,7 @@ const Table = () => {
 									<TableCell>
 										<Box sx={{ display: "flex", alignItems: "center" }}>
 											<FEATURE_FLAG.view.inline code={flow.src_country} />
-											<Typography>
+											<Typography style={{ color: "#faf0e6" }}>
 												{flow.src_ip}:{flow.src_port}
 											</Typography>
 										</Box>
@@ -151,12 +203,14 @@ const Table = () => {
 									<TableCell>
 										<Box sx={{ display: "flex", alignItems: "center" }}>
 											<FEATURE_FLAG.view.inline code={flow.dst_country} />
-											<Typography>
+											<Typography style={{ color: "#faf0e6" }}>
 												{flow.dst_ip}:{flow.dst_port}
 											</Typography>
 										</Box>
 									</TableCell>
-									<TableCell>{flow.protocol}</TableCell>
+									<TableCell style={{ color: "#faf0e6" }}>
+										{flow.protocol}
+									</TableCell>
 									<TableCell>
 										<FEATURE_CATEGORY.view.inline category={flow.category} />
 									</TableCell>
@@ -176,6 +230,7 @@ const Table = () => {
 					showFirstButton
 					showLastButton
 					disabled={isLoading || error !== null}
+					style={{ color: "#faf0e6" }}
 				/>
 			</Box>
 		</Box>

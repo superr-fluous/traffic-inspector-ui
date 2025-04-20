@@ -1,4 +1,6 @@
 import * as esbuild from "esbuild";
+import CssModulesPlugin from "esbuild-css-modules-plugin";
+
 import http from "node:http";
 import path from "path";
 import fs from "fs";
@@ -19,7 +21,17 @@ let ctx = await esbuild.context({
 	target: ["chrome120", "firefox130"],
 	treeShaking: true,
 	sourcemap: true,
-	plugins: [copy({ from: "static/index.dev.html", to: "dev/index.html" })],
+	plugins: [
+		copy([
+			{ from: "static/index.dev.html", to: "dev/index.html" },
+			{ from: "assets", to: "dev/assets" },
+		]),
+		CssModulesPlugin({
+			inject: false,
+			localsConvention: "camelCase",
+			pattern: "[local]___[hash]",
+		}),
+	],
 });
 
 // The return value tells us where esbuild's local server is
