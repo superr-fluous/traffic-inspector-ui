@@ -1,34 +1,91 @@
 import React, { useEffect, useState } from "react";
 import type { FC } from "react";
 
-import {
-	Container,
-	Paper,
-	Typography,
-	Chip,
-	Box,
-	Table,
-	TableBody,
-	TableRow,
-	TableCell,
-	CircularProgress,
-	TableContainer,
-} from "@mui/material";
-import { SwapHorizontalCircle as SwapIcon } from "@mui/icons-material";
+import Typography from "@mui/material/Typography";
 
-import { FEATURE_FLAG } from "@features/open/flag";
+import { Loader } from "@shared/ui/loader";
+
 import { FEATURE_PROTOCOL } from "@features/open/protocol";
 
 import { getFlow } from "../endpoint/query";
 import { ByteRatioBar } from "../ui/byte-ratio-bar";
+import { TcpIpLayers } from "../ui/tcp-ip-layers";
+
 import type { Flow, FlowDetailed } from "../model";
 
 interface Props {
 	flow_id: Flow["id"];
 }
 
+const mock: FlowDetailed = {
+	id: "1",
+	src_ip: "localhost",
+	src_port: 4000,
+	src_country: "ru",
+	dst_ip: "10.11.1.2",
+	dst_port: 443,
+	dst_country: "ru",
+	category: "VPN",
+	protocol: "HTTPS",
+	last_seen: "2025-04-23 12:00:00",
+	src_mac: "MAC",
+	dst_mac: "MAC",
+	ipv: 4,
+	tcp_fingerprint: "try hole but finger",
+	src_os: "os",
+	dst_os: "os",
+	// TODO: proto? Flow['protocol']?
+	proto: "proto",
+	src_as: "src_as",
+	dst_as: "dst_as",
+	first_seen: "first_seen",
+	src_num_pkts: 1200,
+	dst_num_pkts: 500,
+	src_len_pkts: 1232130,
+	dst_len_pkts: 21312,
+	ndpi: {
+		tls: {
+			tls_supported_versions: "TLSv1.3",
+			ja4: "ja4",
+			ja3s: "ja3s",
+			blocks: 3,
+			cipher: "cipher",
+			version: "version",
+			issuerDN: "issuerDN",
+			subjectDN: "subjectDN",
+			fingerprint: "fingerpint",
+			server_names: "server_names",
+			unsafe_cipher: 1,
+			negotiated_alpn: "negotiated_alpn",
+			advertised_alpns: "advertised_apns",
+		},
+		dns: {
+			rsp_addr: ["response"],
+			rsp_type: 1,
+			query_type: 1,
+			reply_code: 1,
+			num_answers: 2,
+			num_queries: 3,
+		},
+		breed: "breed",
+		proto: "proto",
+		category: "category",
+		hostname: "hostname",
+		proto_id: "proto_id",
+		domainame: "string",
+		encrypted: 1,
+		// flow_risk: { "6": {} },
+		//confidence: {
+		//		"6": {},
+		//},
+		category_id: 6,
+		proto_by_ip: "21",
+		proto_by_ip_id: 1,
+	},
+};
+
 const Info: FC<Props> = ({ flow_id }) => {
-	const [data, setData] = useState<FlowDetailed | null>(null);
+	const [data, setData] = useState<FlowDetailed | null>(mock);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
@@ -47,428 +104,28 @@ const Info: FC<Props> = ({ flow_id }) => {
 	};
 
 	useEffect(() => {
-		doFetch();
+		// doFetch();
 	}, [flow_id]);
 
 	return (
-		<Container
-			style={{
-				width: "100%",
-				maxWidth: "100%",
-				height: "100%",
-				maxHeight: "100",
-				paddingInline: 0,
-			}}
-		>
-			{isLoading && (
-				<Box
-					sx={{
-						display: "inline-flex",
-						flexDirection: "column",
-						alignItems: "center",
-						justifyContent: "center",
-						height: "100%",
-						width: "100%",
-						bgcolor: "background.default",
-					}}
-				>
-					<div style={{ margin: "0.25rem" }}>
-						<CircularProgress size={60} thickness={4} />
-					</div>
-				</Box>
-			)}
+		<>
+			{isLoading && <Loader size={52} thickness={3} />}
 			{!isLoading && error !== null && (
-				<Typography
-					align="center"
-					sx={{ fontWeight: 600 }}
-					gutterBottom
-					color="error"
-				>
+				<Typography align="center" gutterBottom variant="error">
 					{error}
 				</Typography>
 			)}
 			{!isLoading && error === null && data !== null && (
-				<>
+				<div
+					style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}
+				>
 					{/* Connection Flow Section */}
 					<ByteRatioBar
 						source={data.src_len_pkts}
 						destination={data.dst_len_pkts}
 					/>
-					<Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-						<Box
-							sx={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								gap: 2,
-								flexWrap: "wrap",
-							}}
-						>
-							{/* Source Block */}
-							<Box
-								sx={{
-									display: "flex",
-									flexDirection: "column-reverse",
-									gap: 0.5,
-									border: "1px solid",
-									borderColor: "divider",
-									borderRadius: 1,
-									p: 1,
-									bgcolor: "background.paper",
-									minWidth: 220,
-									position: "relative",
-								}}
-							>
-								{/* Physical Layer (MAC) */}
-								<Box
-									sx={{
-										p: 1,
-										bgcolor: "grey.100",
-										border: "1px solid",
-										borderColor: "grey.300",
-										borderRadius: 1,
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-										}}
-									>
-										<Typography variant="caption" color="text.secondary">
-											Data Link Layer
-										</Typography>
-										<Chip label="MAC" size="small" sx={{ ml: 1 }} />
-									</Box>
-									<Typography variant="body2" fontFamily="monospace">
-										{data.src_mac || "00:00:00:00:00:00"}
-									</Typography>
-								</Box>
 
-								{/* Network Layer (IP) */}
-								<Box
-									sx={{
-										p: 1,
-										bgcolor: "grey.50",
-										border: "1px solid",
-										borderColor: "grey.200",
-										borderRadius: 1,
-										marginTop: -0.5,
-										zIndex: 1,
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-										}}
-									>
-										<Typography variant="caption" color="text.secondary">
-											Network Layer
-										</Typography>
-										<Chip
-											label={`IPv${data.ipv}`}
-											size="small"
-											sx={{ ml: 1 }}
-										/>
-									</Box>
-									<Typography variant="body2" fontFamily="monospace">
-										{data.src_ip}
-									</Typography>
-								</Box>
-
-								{/* Transport Layer */}
-								<Box
-									sx={{
-										p: 1,
-										bgcolor: "common.white",
-										border: "1px solid",
-										borderColor: "grey.100",
-										borderRadius: 1,
-										marginTop: -0.5,
-										zIndex: 2,
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-										}}
-									>
-										<Typography variant="caption" color="text.secondary">
-											Transport Layer
-										</Typography>
-										<Chip label={data.proto} size="small" sx={{ ml: 1 }} />
-									</Box>
-									<Typography variant="body2" fontFamily="monospace">
-										Port: {data.src_port}
-									</Typography>
-								</Box>
-							</Box>
-
-							<Box
-								sx={{
-									display: "flex",
-									alignItems: "center",
-									gap: 2,
-									flexDirection: { xs: "column", md: "row" },
-								}}
-							>
-								{/* Source Country/ASN Table */}
-								<TableContainer
-									sx={{
-										border: "1px solid",
-										borderColor: "divider",
-										borderRadius: 1,
-										minWidth: 160,
-										textAlign: "center",
-									}}
-								>
-									<Table size="small">
-										<TableBody>
-											<TableRow>
-												<TableCell
-													sx={{
-														borderBottom: "none",
-														py: 1,
-														textAlign: "center",
-														verticalAlign: "middle",
-													}}
-												>
-													<Box
-														sx={{
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															gap: 1,
-														}}
-													>
-														<FEATURE_FLAG.view.inline code={data.src_country} />
-														<Typography variant="body2">
-															{data.src_country || "N/A"}
-														</Typography>
-													</Box>
-												</TableCell>
-											</TableRow>
-											<TableRow>
-												<TableCell
-													sx={{
-														py: 1,
-														textAlign: "center",
-														verticalAlign: "middle",
-													}}
-												>
-													<Box
-														sx={{
-															display: "flex",
-															justifyContent: "center",
-														}}
-													>
-														<Chip
-															label={`${data.src_as}`}
-															size="small"
-															sx={{
-																fontFamily: "monospace",
-																maxWidth: "100%",
-																display: "flex",
-																justifyContent: "center",
-															}}
-														/>
-													</Box>
-												</TableCell>
-											</TableRow>
-										</TableBody>
-									</Table>
-								</TableContainer>
-
-								<SwapIcon
-									color="action"
-									sx={{
-										fontSize: 40,
-										transform: "rotate(90deg) scale(1.5)",
-										"@media (min-width: 600px)": {
-											transform: "rotate(0deg) scale(1.5)",
-										},
-										transition: "transform 0.3s ease",
-									}}
-								/>
-
-								{/* Destination Country/ASN Table */}
-								<Box
-									sx={{
-										border: "1px solid",
-										borderColor: "divider",
-										borderRadius: 1,
-										minWidth: 160,
-										textAlign: "center",
-									}}
-								>
-									<Table size="small">
-										<TableBody>
-											<TableRow>
-												<TableCell
-													sx={{
-														borderBottom: "none",
-														py: 1,
-														textAlign: "center",
-														verticalAlign: "middle",
-													}}
-												>
-													<Box
-														sx={{
-															display: "flex",
-															alignItems: "center",
-															justifyContent: "center",
-															gap: 1,
-														}}
-													>
-														<FEATURE_FLAG.view.inline code={data.dst_country} />
-														<Typography variant="body2">
-															{data.dst_country || "N/A"}
-														</Typography>
-													</Box>
-												</TableCell>
-											</TableRow>
-											<TableRow>
-												<TableCell
-													sx={{
-														py: 1,
-														textAlign: "center",
-														verticalAlign: "middle",
-													}}
-												>
-													<Box
-														sx={{
-															display: "flex",
-															justifyContent: "center",
-														}}
-													>
-														<Chip
-															label={`${data.dst_as}`}
-															size="small"
-															sx={{
-																fontFamily: "monospace",
-																maxWidth: "100%",
-																display: "flex",
-																justifyContent: "center",
-															}}
-														/>
-													</Box>
-												</TableCell>
-											</TableRow>
-										</TableBody>
-									</Table>
-								</Box>
-							</Box>
-
-							<Box
-								sx={{
-									display: "flex",
-									flexDirection: "column-reverse",
-									gap: 0.5,
-									border: "1px solid",
-									borderColor: "divider",
-									borderRadius: 1,
-									p: 1,
-									bgcolor: "background.paper",
-									minWidth: 220,
-									position: "relative",
-								}}
-							>
-								{/* Physical Layer (MAC) */}
-								<Box
-									sx={{
-										p: 1,
-										bgcolor: "grey.100",
-										border: "1px solid",
-										borderColor: "grey.300",
-										borderRadius: 1,
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-										}}
-									>
-										<Typography variant="caption" color="text.secondary">
-											Data Link Layer
-										</Typography>
-										<Chip label="MAC" size="small" sx={{ ml: 1 }} />
-									</Box>
-									<Typography variant="body2" fontFamily="monospace">
-										{data.dst_mac || "00:00:00:00:00:00"}
-									</Typography>
-								</Box>
-
-								{/* Network Layer (IP) */}
-								<Box
-									sx={{
-										p: 1,
-										bgcolor: "grey.50",
-										border: "1px solid",
-										borderColor: "grey.200",
-										borderRadius: 1,
-										marginTop: -0.5,
-										zIndex: 1,
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-										}}
-									>
-										<Typography variant="caption" color="text.secondary">
-											Network Layer
-										</Typography>
-										<Chip
-											label={`IPv${data.ipv}`}
-											size="small"
-											sx={{ ml: 1 }}
-										/>
-									</Box>
-									<Typography variant="body2" fontFamily="monospace">
-										{data.dst_ip}
-									</Typography>
-								</Box>
-
-								{/* Transport Layer */}
-								<Box
-									sx={{
-										p: 1,
-										bgcolor: "common.white",
-										border: "1px solid",
-										borderColor: "grey.100",
-										borderRadius: 1,
-										marginTop: -0.5,
-										zIndex: 2,
-									}}
-								>
-									<Box
-										sx={{
-											display: "flex",
-											justifyContent: "space-between",
-											alignItems: "center",
-										}}
-									>
-										<Typography variant="caption" color="text.secondary">
-											Transport Layer
-										</Typography>
-										<Chip label={data.proto} size="small" sx={{ ml: 1 }} />
-									</Box>
-									<Typography variant="body2" fontFamily="monospace">
-										Port: {data.dst_port}
-									</Typography>
-								</Box>
-							</Box>
-						</Box>
-					</Paper>
+					<TcpIpLayers flow={data} />
 
 					<FEATURE_PROTOCOL.view.info.full
 						details={{
@@ -489,9 +146,9 @@ const Info: FC<Props> = ({ flow_id }) => {
 					{data.ndpi.dns && (
 						<FEATURE_PROTOCOL.view.info.dns details={data.ndpi.dns} />
 					)}
-				</>
+				</div>
 			)}
-		</Container>
+		</>
 	);
 };
 

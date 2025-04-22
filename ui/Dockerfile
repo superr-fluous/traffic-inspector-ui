@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run serve
+RUN npm run dev
 
 EXPOSE 3000
 

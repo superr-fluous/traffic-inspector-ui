@@ -1,20 +1,17 @@
 import React from "react";
 import type { FC } from "react";
 
-import {
-	Paper,
-	Typography,
-	Chip,
-	Stack,
-	Box,
-	List,
-	ListItem,
-	Divider,
-	ListItemText,
-} from "@mui/material";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import ListItem from "@mui/material/ListItem";
+import Typography from "@mui/material/Typography";
+import ListItemText from "@mui/material/ListItemText";
+
 import DnsIcon from "@mui/icons-material/Dns";
 
-import { SectionHeader } from "@shared/ui/section-header";
+import { COLORS } from "@layout/theme";
+import { BlockHeader } from "@shared/ui/block-header";
 
 import { replyCodes, types } from "./helpers";
 import type Model from "./model";
@@ -25,8 +22,18 @@ interface Props {
 
 const Info: FC<Props> = ({ details }) => {
 	return (
-		<Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-			<SectionHeader icon={DnsIcon} title="DNS Information" />
+		<Box
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				gap: 2,
+				flexWrap: "wrap",
+				padding: "24px",
+				borderRadius: "8px",
+				border: "1px solid var(--disabled)",
+			}}
+		>
+			<BlockHeader icon={DnsIcon} title="DNS Information" />
 
 			<Stack
 				direction="row"
@@ -55,48 +62,47 @@ const Info: FC<Props> = ({ details }) => {
 					sx={{
 						display: "flex",
 						alignItems: "center",
-						fontSize: "0.875rem",
-						color: "text.secondary",
 					}}
 				>
-					<span>
+					<Typography variant="base">
 						Queries: <strong>{details.num_queries}</strong>
-					</span>
-					<Box component="span" sx={{ mx: 0.5 }}>
+					</Typography>
+					<Box
+						color={COLORS["off-white"]}
+						component="span"
+						style={{ marginInline: "0.5rem" }}
+					>
 						•
 					</Box>
-					<span>
+					<Typography variant="base">
 						Answers: <strong>{details.num_answers}</strong>
-					</span>
+					</Typography>
 				</Box>
 			</Stack>
 
-			<Divider sx={{ my: 2 }} />
-
-			{details.rsp_addr?.length > 0 && (
-				<>
-					<Typography variant="subtitle2" gutterBottom>
-						Responses ({details.num_answers}):
-					</Typography>
-					<List dense sx={{ mb: 2 }}>
-						{details.rsp_addr.map((addr, index) => {
-							const [ip, ttl] = addr.split(",ttl=");
-							return (
-								<ListItem key={index}>
-									<ListItemText
-										primary={ip}
-										secondary={`TTL: ${ttl}`}
-										slotProps={{
-											primary: { style: { fontFamily: "monospace" } },
-										}}
-									/>
-								</ListItem>
-							);
-						})}
-					</List>
-				</>
-			)}
-		</Paper>
+			<Typography variant="baseXl">
+				Response ({details.num_answers}):
+			</Typography>
+			{details.rsp_addr.map((addr, index) => {
+				const [ip, ttl] = addr.split(",ttl=");
+				return (
+					<ListItem style={{ padding: "0 16px" }} key={index}>
+						<ListItemText
+							primary={ip}
+							secondary={`TTL: ${ttl}`}
+							slotProps={{
+								primary: {
+									style: {
+										fontFamily: "monospace",
+										color: COLORS["off-white"],
+									},
+								},
+							}}
+						/>
+					</ListItem>
+				);
+			})}
+		</Box>
 	);
 };
 

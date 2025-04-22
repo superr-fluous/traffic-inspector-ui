@@ -22,8 +22,12 @@ body {
 }
 
 :root {
-  --bg: #2f2f2f;
-  --accent: #cc9900;
+  --bg: #0d0f12;
+  --accent: #766ac8;
+  --secondary: #9c27b0;
   --white: #f5f5f5;
   --off-white: #faf0e6;
+  --grey: #aba9a6;
+  --error: #ff3b3b;
+  --disabled: #504e4b;
 }

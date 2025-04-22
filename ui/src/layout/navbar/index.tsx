@@ -10,29 +10,24 @@ import Container from "@mui/material/Container";
 
 import Typography from "@mui/material/Typography";
 
+import { COLORS } from "@layout/theme";
+
 import styles from "./styles.module.css";
 
 const Navbar: FC<PropsWithChildren> = ({ children }) => {
 	return (
-		<AppBar position="static" style={{ backgroundColor: "#CC9900" }}>
-			<Container maxWidth="xl">
+		<AppBar>
+			<Container>
 				<Toolbar disableGutters className={styles["navbar-toolbar"]}>
 					<div className={styles["logo-container"]}>
-						<Typography
-							variant="h6"
-							noWrap
-							component="a"
-							className={styles["app-name"]}
-						>
-							Traffic Inspector
-						</Typography>
+						<Typography variant="navTitle">Traffic Inspector</Typography>
 					</div>
 
 					<Divider
+						style={{ borderColor: COLORS.secondary }}
 						orientation="vertical"
 						variant="middle"
 						flexItem
-						style={{ borderColor: "#2F2F2F", borderWidth: "1.5px" }}
 					/>
 
 					<div className={styles["nav-links"]}>{children}</div>
