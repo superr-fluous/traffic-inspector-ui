@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { Route, Switch, Redirect } from "wouter";
+import { Route, Switch, Redirect, useLocation } from "wouter";
+import type { MouseEventHandler } from "react";
 
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import Link from "@mui/material/Link";
@@ -20,27 +21,37 @@ const root = createRoot(domNode);
 
 const theme = createTheme(Theme);
 
-const App = () => (
-	<ThemeProvider theme={theme}>
-		<Navbar>
-			<Link href="/dashboard" variant="navLink" underline="none" color={COLORS["off-white"]}>Dashboard</Link>
-			<Link href="/flows" variant="navLink" underline="none" color={COLORS["off-white"]}>Flows</Link>
-		</Navbar>
-		<PageWrapper>
-			<Switch>
-				<Route path="/dashboard">
-					<p>Dashboard</p>
-				</Route>
-				<Route path="/flows" component={FlowsPage} />
-				<Route path="/flows/:id">
-					{(params) => <FlowInfoPage flow_id={params.id} />}
-				</Route>
-				<Route path="*">
-					<Redirect to="/dashboard" />
-				</Route>
-			</Switch>
-		</PageWrapper>
-	</ThemeProvider>
-);
+const App = () => {
+	const [_, navigate] = useLocation();
+
+	const handleNavigate = (route: string): MouseEventHandler<HTMLAnchorElement> => (e) => {
+		e.preventDefault();
+		navigate(route);
+	}
+
+	return (
+		<ThemeProvider theme={theme}>
+			<Navbar>
+				<Link
+					href="/dashboard" onClick={handleNavigate('/dashboard')} variant="navLink" underline="none" color={COLORS["off-white"]}>Dashboard</Link>
+				<Link href="/flows" onClick={handleNavigate('/flows')} variant="navLink" underline="none" color={COLORS["off-white"]}>Flows</Link>
+			</Navbar>
+			<PageWrapper>
+				<Switch>
+					<Route path="/dashboard">
+						<p>Dashboard</p>
+					</Route>
+					<Route path="/flows" component={FlowsPage} />
+					<Route path="/flows/:id">
+						{(params) => <FlowInfoPage flow_id={params.id} />}
+					</Route>
+					<Route path="*">
+						<Redirect to="/dashboard" />
+					</Route>
+				</Switch>
+			</PageWrapper>
+		</ThemeProvider >
+	);
+};
 
 root.render(<App />);
