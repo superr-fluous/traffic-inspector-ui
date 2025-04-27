@@ -25,7 +25,7 @@ export const getList = async (
 ): Promise<ApiResponse | ApiFail> => {
 	try {
 		const res = await fetch(
-			`http://192.168.10.1:8000/api/v1/flows/all?page=${page}&limit=${limit}`,
+			`http://localhost:8000/api/v1/flows/all?page=${page}&limit=${limit}`,
 		);
 		return { success: true, ...(await res.json()) } satisfies ApiResponse;
 	} catch (_) {
@@ -38,7 +38,7 @@ export const getList = async (
 
 export const getFlow = async (id: Flow["id"]) => {
 	try {
-		const res = await fetch(`http://192.168.10.1:8000/api/v1/flows/${id}`);
+		const res = await fetch(`http://localhost:8000/api/v1/flows/${id}`);
 		return { success: true, data: (await res.json()) satisfies FlowDetailed };
 	} catch (_) {
 		return {
