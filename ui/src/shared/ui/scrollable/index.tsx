@@ -7,8 +7,10 @@ import styles from "./styles.module.css";
 
 type Props = ComponentProps<"div"> & PropsWithChildren;
 
-export const Scrollable: FC<Props> = ({ children, className, ...props }) => (
+const Scrollable: FC<Props> = ({ children, className, ...props }) => (
 	<div {...props} className={clsx([styles.scrollable, className])}>
 		{children}
 	</div>
 );
+
+export default Scrollable;

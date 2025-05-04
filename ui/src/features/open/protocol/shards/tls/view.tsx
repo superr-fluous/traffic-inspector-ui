@@ -8,7 +8,7 @@ import Typography from "@mui/material/Typography";
 
 import Lock from "@mui/icons-material/Lock";
 
-import { BlockHeader } from "@shared/ui/block-header";
+import { $ui } from "@shared";
 
 import type Model from "./model";
 
@@ -29,7 +29,7 @@ const Info: FC<Props> = ({ details }) => {
 				border: "1px solid var(--disabled)",
 			}}
 		>
-			<BlockHeader icon={Lock} title="TLS Details" />
+			<$ui.blockHeader icon={Lock} title="TLS Details" />
 
 			<Grid
 				container

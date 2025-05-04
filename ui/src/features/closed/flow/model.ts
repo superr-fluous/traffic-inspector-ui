@@ -1,9 +1,4 @@
-import type { FEATURE_FLAG_MODEL_CODE } from "@features/open/flag";
-import type { FEATURE_CATEGORY_MODEL } from "@features/open/category";
-import type {
-	FEATURE_PROTOCOL_MODEL_DNS,
-	FEATURE_PROTOCOL_MODEL_TLS,
-} from "@features/open/protocol";
+import type { Features } from "@features";
 
 export interface Flow {
 	id: string;
@@ -12,10 +7,10 @@ export interface Flow {
 	dst_ip: string;
 	src_port: number;
 	dst_port: number;
-	src_country: FEATURE_FLAG_MODEL_CODE;
-	dst_country: FEATURE_FLAG_MODEL_CODE;
-	protocol: string;
-	category: FEATURE_CATEGORY_MODEL;
+	src_country: Features['open']['country']['enum'];
+	dst_country: Features['open']['country']['enum'];
+	protocol: Features['open']['protocol']['enum'];
+	category: Features['open']['category']['enum'];
 }
 
 interface FlowRisk {
@@ -36,7 +31,7 @@ export interface FlowDetailed extends Flow {
 	src_os: string;
 	dst_os: string;
 	// TODO: proto? Flow['protocol']?
-	proto: string;
+	proto: Features['open']['protocol']['enum'];
 	src_as: string;
 	dst_as: string;
 	first_seen: string;
@@ -46,8 +41,8 @@ export interface FlowDetailed extends Flow {
 	src_len_pkts: number;
 	dst_len_pkts: number;
 	ndpi: {
-		tls: FEATURE_PROTOCOL_MODEL_TLS;
-		dns: FEATURE_PROTOCOL_MODEL_DNS;
+		tls: Features['open']['protocol']['tls'];
+		dns: Features['open']['protocol']['dns'];
 		breed: string;
 		proto: string;
 		category: string;

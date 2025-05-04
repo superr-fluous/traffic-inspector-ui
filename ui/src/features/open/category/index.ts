@@ -1,10 +1,17 @@
-import { Inline } from "./view";
+import Top from './views/top';
+import Badge from './views/badge';
+
 import type { Category } from "./model";
 
-export const FEATURE_CATEGORY = {
+export default {
 	view: {
-		inline: Inline,
+		badge: Badge,
+		chart: {
+			top: Top,
+		}
 	},
 };
 
-export type FEATURE_CATEGORY_MODEL = Category;
+export interface Model {
+	enum: Category,
+};

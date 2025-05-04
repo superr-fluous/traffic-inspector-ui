@@ -1,4 +1,4 @@
-export const HELPERS_DATA_PRETTIFY_BYTES = (bytes: number, decimals = 2) => {
+export const prettyBytes = (bytes: number, decimals = 2) => {
 	if (bytes === 0) return "0 Bytes";
 
 	const k = 1024;
@@ -10,3 +10,5 @@ export const HELPERS_DATA_PRETTIFY_BYTES = (bytes: number, decimals = 2) => {
 
 	return `${value} ${sizes[i]}`;
 };
+
+export default { prettyBytes };

@@ -1,14 +1,14 @@
 import React from "react";
 import type { FC, PropsWithChildren } from "react";
 
-import { Scrollable } from "@shared/ui/scrollable";
+import { $ui } from "@shared";
 
 import styles from "./styles.module.css";
 
 const Page: FC<PropsWithChildren> = ({ children }) => (
-	<Scrollable className={styles["page-container"]}>
-		<div className={styles["page-content-wrapper"]}>{children}</div>
-	</Scrollable>
+  <$ui.scrollable className={styles["page-container"]}>
+    <div className={styles["page-content-wrapper"]}>{children}</div>
+  </$ui.scrollable>
 );
 
 export default Page;

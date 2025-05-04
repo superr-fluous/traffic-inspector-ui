@@ -11,10 +11,8 @@ import Typography from "@mui/material/Typography";
 import Pagination from "@mui/material/Pagination";
 import TableContainer from "@mui/material/TableContainer";
 
-import { Loader } from "@shared/ui/loader";
-
-import { FEATURE_FLAG } from "@features/open/flag";
-import { FEATURE_CATEGORY } from "@features/open/category";
+import { $ui } from "@shared";
+import { $features } from "@features";
 
 import { getList, type TablePagination } from "../endpoint/query";
 import type { Flow } from "../model";
@@ -93,7 +91,7 @@ const Table = () => {
 					</TableHead>
 					{isLoading && (
 						<td colSpan={5} style={{ height: "72px" }}>
-							<Loader size={52} thickness={3} />
+							<$ui.loader size={52} thickness={3} />
 						</td>
 					)}
 					{!isLoading && error !== null && (
@@ -131,7 +129,7 @@ const Table = () => {
 												gap: "0.4rem",
 											}}
 										>
-											<FEATURE_FLAG.view.inline code={flow.src_country} />
+											<$features.open.country.view.flag code={flow.src_country} />
 											<Typography variant="tableCell">
 												{flow.src_ip}:{flow.src_port}
 											</Typography>
@@ -145,7 +143,7 @@ const Table = () => {
 												gap: "0.4rem",
 											}}
 										>
-											<FEATURE_FLAG.view.inline code={flow.dst_country} />
+											<$features.open.country.view.flag code={flow.dst_country} />
 											<Typography variant="tableCell">
 												{flow.dst_ip}:{flow.dst_port}
 											</Typography>
@@ -155,7 +153,7 @@ const Table = () => {
 										<Typography variant="tableCell">{flow.protocol}</Typography>
 									</TableCell>
 									<TableCell>
-										<FEATURE_CATEGORY.view.inline category={flow.category} />
+										<$features.open.category.view.badge category={flow.category} />
 									</TableCell>
 								</TableRow>
 							))}

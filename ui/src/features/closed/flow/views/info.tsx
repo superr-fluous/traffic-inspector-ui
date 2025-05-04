@@ -3,9 +3,8 @@ import type { FC } from "react";
 
 import Typography from "@mui/material/Typography";
 
-import { Loader } from "@shared/ui/loader";
-
-import { FEATURE_PROTOCOL } from "@features/open/protocol";
+import { $ui } from "@shared";
+import { $features } from "@features";
 
 import { getFlow } from "../endpoint/query";
 import { ByteRatioBar } from "../ui/byte-ratio-bar";
@@ -42,7 +41,7 @@ const Info: FC<Props> = ({ flow_id }) => {
 
 	return (
 		<>
-			{isLoading && <Loader size={52} thickness={3} />}
+			{isLoading && <$ui.loader size={52} thickness={3} />}
 			{!isLoading && error !== null && (
 				<Typography align="center" gutterBottom variant="error">
 					{error}
@@ -60,7 +59,7 @@ const Info: FC<Props> = ({ flow_id }) => {
 
 					<TcpIpLayers flow={data} />
 
-					<FEATURE_PROTOCOL.view.info.full
+					<$features.open.protocol.view.info.full
 						details={{
 							breed: data.ndpi.breed,
 							proto: data.ndpi.proto,
@@ -73,11 +72,11 @@ const Info: FC<Props> = ({ flow_id }) => {
 					/>
 
 					{data.ndpi.tls && (
-						<FEATURE_PROTOCOL.view.info.tls details={data.ndpi.tls} />
+						<$features.open.protocol.view.info.tls details={data.ndpi.tls} />
 					)}
 
 					{data.ndpi.dns && (
-						<FEATURE_PROTOCOL.view.info.dns details={data.ndpi.dns} />
+						<$features.open.protocol.view.info.dns details={data.ndpi.dns} />
 					)}
 				</div>
 			)}

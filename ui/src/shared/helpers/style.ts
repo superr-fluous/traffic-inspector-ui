@@ -1,7 +1,7 @@
 /**
  * @param color - color in HEX form
  */
-export const HELPERS_STYLE_IS_COLOR_LIGHT = (color: string) => {
+const isColorLight = (color: string) => {
 	const hex = color.replace("#", "");
 
 	// Convert to RGB
@@ -14,3 +14,5 @@ export const HELPERS_STYLE_IS_COLOR_LIGHT = (color: string) => {
 
 	return brightness > 128; // true = light, false = dark
 };
+
+export default { isColorLight }

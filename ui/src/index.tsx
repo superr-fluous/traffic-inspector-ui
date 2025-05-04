@@ -13,6 +13,7 @@ import Theme, { COLORS } from "@layout/theme";
 
 import FlowsPage from "@pages/flows";
 import FlowInfoPage from "@pages/flow-info";
+import DashboardPage from "@pages/dashboard";
 
 import "./index.css";
 
@@ -38,9 +39,7 @@ const App = () => {
 			</Navbar>
 			<PageWrapper>
 				<Switch>
-					<Route path="/dashboard">
-						<p>Dashboard</p>
-					</Route>
+					<Route path="/dashboard" component={DashboardPage} />
 					<Route path="/flows" component={FlowsPage} />
 					<Route path="/flows/:id">
 						{(params) => <FlowInfoPage flow_id={params.id} />}

@@ -1,0 +1,22 @@
+.widget-container {
+  padding: 0.75rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  background-color: var(--bg);
+
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.widget-container .widget-header {
+  flex: 0 0 auto;
+}
+
+.widget-container .widget-wrapper {
+  flex: 1 1 auto;
+  max-height: 100%;
+  overflow: hidden;
+}

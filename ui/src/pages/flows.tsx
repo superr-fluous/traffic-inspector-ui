@@ -1,13 +1,13 @@
 import React from "react";
 
-import { FEATURE_FLOW } from "@features/closed/flow";
-import { PageHeader } from "@shared/ui/page-header";
+import { $features } from "@features";
+import { $ui } from "@shared";
 
 const Page = () => (
-  <>
-    <PageHeader>Network Flows</PageHeader>
-    <FEATURE_FLOW.view.table />
-  </>
+	<>
+		<$ui.pageHeader>Network Flows</$ui.pageHeader>
+		<$features.closed.flow.view.table />
+	</>
 );
 
 export default Page;

@@ -13,6 +13,10 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "@nivo/bar": "^0.93.0",
+    "@nivo/core": "^0.93.0",
+    "@nivo/line": "^0.93.0",
+    "@nivo/pie": "^0.93.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "reactflow": "^11.11.4",
@@ -33,5 +37,23 @@
     "fs-extra": "^11.3.0",
     "typescript": "^5",
     "typescript-eslint": "^8.30.1"
+  },
+  "overrides": {
+    "@react-spring/core": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "@react-spring/web": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "@react-spring/shared": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    },
+    "@react-spring/animated": {
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+    }
   }
 }

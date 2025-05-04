@@ -1,20 +1,20 @@
 import React from "react";
 import type { FC } from "react";
 
-import { PageHeader } from "@shared/ui/page-header";
+import { $ui } from "@shared";
 
-import { FEATURE_FLOW } from "@features/closed/flow";
-import type { FEATURE_FLOW_MODEL } from "@features/closed/flow";
+import { $features } from "@features";
+import type { Features } from "@features";
 
 interface Props {
-  flow_id: FEATURE_FLOW_MODEL["default"]["id"];
+	flow_id: Features['closed']['flow']["default"]["id"];
 }
 
 const Page: FC<Props> = ({ flow_id }) => (
-  <>
-    <PageHeader>Network Flow Info</PageHeader>
-    {flow_id !== undefined && <FEATURE_FLOW.view.info flow_id={flow_id} />}
-  </>
+	<>
+		<$ui.pageHeader>Network Flow Info</$ui.pageHeader>
+		{flow_id !== undefined && <$features.closed.flow.view.info flow_id={flow_id} />}
+	</>
 );
 
 export default Page;

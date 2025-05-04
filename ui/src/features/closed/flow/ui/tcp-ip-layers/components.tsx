@@ -9,12 +9,13 @@ import TableCell from "@mui/material/TableCell";
 import TableBody from "@mui/material/TableBody";
 import Typography from "@mui/material/Typography";
 import TableContainer from "@mui/material/TableContainer";
+
 import SwapIcon from "@mui/icons-material/SwapHorizontalCircle";
 
-import { FEATURE_FLAG } from "@features/open/flag";
+import { COLORS } from "@layout/theme";
+import { $features } from "@features";
 
 import type { FlowDetailed } from "../../model";
-import { COLORS } from "@layout/theme";
 
 interface LayersProps {
 	ipv: FlowDetailed["ipv"];
@@ -195,7 +196,7 @@ const As: FC<AsProps> = ({ dst_as, dst_country, src_as, src_country }) => (
 									gap: 1,
 								}}
 							>
-								<FEATURE_FLAG.view.inline code={src_country} />
+								<$features.open.country.view.flag code={src_country} />
 								<Typography variant="body2">{src_country || "N/A"}</Typography>
 							</Box>
 						</TableCell>
@@ -272,7 +273,7 @@ const As: FC<AsProps> = ({ dst_as, dst_country, src_as, src_country }) => (
 									gap: 1,
 								}}
 							>
-								<FEATURE_FLAG.view.inline code={dst_country} />
+								<$features.open.country.view.flag code={dst_country} />
 								<Typography variant="body2">{dst_country || "N/A"}</Typography>
 							</Box>
 						</TableCell>

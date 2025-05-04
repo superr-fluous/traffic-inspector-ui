@@ -11,7 +11,7 @@ import ListItemText from "@mui/material/ListItemText";
 import DnsIcon from "@mui/icons-material/Dns";
 
 import { COLORS } from "@layout/theme";
-import { BlockHeader } from "@shared/ui/block-header";
+import { $ui } from "@shared";
 
 import { replyCodes, types } from "./helpers";
 import type Model from "./model";
@@ -33,7 +33,7 @@ const Info: FC<Props> = ({ details }) => {
 				border: "1px solid var(--disabled)",
 			}}
 		>
-			<BlockHeader icon={DnsIcon} title="DNS Information" />
+			<$ui.blockHeader icon={DnsIcon} title="DNS Information" />
 
 			<Stack
 				direction="row"
