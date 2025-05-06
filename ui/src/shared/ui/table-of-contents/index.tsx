@@ -1,6 +1,5 @@
 import React from "react";
 import type { FC } from "react";
-import { useHashLocation } from "wouter/use-hash-location";
 
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
@@ -12,16 +11,11 @@ import { $hooks } from "@shared";
 
 interface Props {
   contents: Array<{ label: string; id: string; level: number }>;
-  pathBase: string;
 }
 
-const TableOfContents: FC<Props> = ({ contents, pathBase }) => {
-  const [hash] = useHashLocation();
+const TableOfContents: FC<Props> = ({ contents }) => {
   const ids = contents.map((item) => item.id);
   const [activeId, scrollIntoView] = $hooks.useScrollSpy(ids);
-
-  // Extract current anchor from URL
-  const active = hash.slice(1);
 
   return (
     <Box

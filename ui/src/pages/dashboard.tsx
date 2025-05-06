@@ -21,7 +21,7 @@ const toc = [
 const Dashboard = () => {
   return (
     <>
-      <$ui.tableOfContents contents={toc} pathBase="dashboard" />
+      <$ui.tableOfContents contents={toc} />
       <$ui.pageHeader>Dashboard</$ui.pageHeader>
 
       <div id="total">

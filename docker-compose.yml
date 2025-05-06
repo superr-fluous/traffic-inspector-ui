@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ./api
+    container_name: backend
+    networks:
+      - app-net
+    expose:
+      - "8000"
+
+  nginx:
+    build:
+      context: ./ui
+    container_name: nginx
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
+

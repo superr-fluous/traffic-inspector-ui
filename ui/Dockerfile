@@ -17,6 +17,10 @@ RUN npm run build
 # Stage for Nginx setup
 FROM nginx:alpine
 
+# provide --build-arg BACKEND_HOST=* to change url to backend; needed to deploy frontend only (without docker-compose)
+ARG BACKEND_HOST=backend
+ENV BACKEND_HOST=${BACKEND_HOST}
+
 # Copy the built files from the build stage to /var/www/ui
 COPY --from=build /frontend/build /var/www/ui
 # Need execute permissions for assets/styles;
@@ -25,6 +29,8 @@ RUN chmod 755 /var/www/ui/assets/styles
 
 # Copy the custom nginx.conf to sites-available
 COPY nginx.conf /etc/nginx/sites-available/traffic-inspector-ui
+# Substituting __BACKEND_HOST__ with build arg
+RUN sed -i "s/__BACKEND_HOST__/${BACKEND_HOST}/g" /etc/nginx/sites-available/traffic-inspector-ui
 
 # Create a symlink for the nginx.conf in sites-enabled
 RUN mkdir -p /etc/nginx/sites-enabled
@@ -32,11 +38,11 @@ RUN ln -sf /etc/nginx/sites-available/traffic-inspector-ui /etc/nginx/sites-enab
 
 RUN sed -i '/http {/a include /etc/nginx/sites-enabled/*;' /etc/nginx/nginx.conf
 
-RUN nginx -t
+COPY docker-start.sh /start.sh
 
-# Expose port 3000 for the app
+RUN apk add --no-cache dos2unix && dos2unix /start.sh
+RUN chmod +x /start.sh
+
 EXPOSE 3000
 
-# Start nginx when the container runs
-CMD ["nginx", "-g", "daemon off;"]
-
+CMD ["/start.sh"]
