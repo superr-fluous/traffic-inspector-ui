@@ -24,9 +24,7 @@ export const getList = async (
 	limit = 20,
 ): Promise<ApiResponse | ApiFail> => {
 	try {
-		const res = await fetch(
-			`http://localhost:8000/api/v1/flows/all?page=${page}&limit=${limit}`,
-		);
+		const res = await fetch(`/api/v1/flows/all?page=${page}&limit=${limit}`);
 		return { success: true, ...(await res.json()) } satisfies ApiResponse;
 	} catch (_) {
 		return {
@@ -38,7 +36,7 @@ export const getList = async (
 
 export const getFlow = async (id: Flow["id"]) => {
 	try {
-		const res = await fetch(`http://localhost:8000/api/v1/flows/${id}`);
+		const res = await fetch(`/api/v1/flows/${id}`);
 		return { success: true, data: (await res.json()) satisfies FlowDetailed };
 	} catch (_) {
 		return {

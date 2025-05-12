@@ -43,6 +43,4 @@ COPY docker-start.sh /start.sh
 RUN apk add --no-cache dos2unix && dos2unix /start.sh
 RUN chmod +x /start.sh
 
-EXPOSE 3000
-
 CMD ["/start.sh"]
