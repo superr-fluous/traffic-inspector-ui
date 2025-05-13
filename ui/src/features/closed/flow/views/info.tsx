@@ -7,8 +7,8 @@ import { $ui } from "@shared";
 import { $features } from "@features";
 
 import { getFlow } from "../endpoint/query";
-import { ByteRatioBar } from "../ui/byte-ratio-bar";
 import { TcpIpLayers } from "../ui/tcp-ip-layers";
+import { ByteRatioBar } from "../ui/byte-ratio-bar";
 
 import type { Flow, FlowDetailed } from "../model";
 
@@ -21,22 +21,28 @@ const Info: FC<Props> = ({ flow_id }) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const doFetch = async () => {
+	const doFetch = async (signal: AbortSignal) => {
 		setIsLoading(true);
-		const res = await getFlow(flow_id);
+		const res = await getFlow(flow_id, signal);
 		setIsLoading(false);
 
-		if (res.success) {
+		if (res.ok) {
 			setError(null);
 			setData(res.data);
 		} else {
 			setData(null);
-			setError(res.reason!);
+			setError(res.error);
 		}
 	};
 
 	useEffect(() => {
-		doFetch();
+		const ctrl = new AbortController();
+
+		doFetch(ctrl.signal);
+
+		return () => {
+			ctrl.abort();
+		};
 	}, [flow_id]);
 
 	return (

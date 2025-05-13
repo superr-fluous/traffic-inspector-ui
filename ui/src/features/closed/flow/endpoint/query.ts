@@ -1,3 +1,5 @@
+import { $api } from "@services";
+
 import type { Flow, FlowDetailed } from "../model";
 
 export interface TablePagination {
@@ -9,39 +11,12 @@ export interface TablePagination {
 }
 
 export interface ApiResponse {
-	success: true;
 	data: Flow[];
 	pagination: TablePagination;
 }
 
-export interface ApiFail {
-	success: false;
-	reason: string;
-}
+export const getList = async (page: number, limit = 20, signal?: AbortSignal) =>
+	await (await $api<ApiResponse>(`flows/all?page=${page}&limit=${limit}`, { signal })).json();
 
-export const getList = async (
-	page: number,
-	limit = 20,
-): Promise<ApiResponse | ApiFail> => {
-	try {
-		const res = await fetch(`/api/v1/flows/all?page=${page}&limit=${limit}`);
-		return { success: true, ...(await res.json()) } satisfies ApiResponse;
-	} catch (_) {
-		return {
-			success: false,
-			reason: "Failed to fetch flows list",
-		} satisfies ApiFail;
-	}
-};
-
-export const getFlow = async (id: Flow["id"]) => {
-	try {
-		const res = await fetch(`/api/v1/flows/${id}`);
-		return { success: true, data: (await res.json()) satisfies FlowDetailed };
-	} catch (_) {
-		return {
-			success: false,
-			reason: "Failed to fetch flow data",
-		} satisfies ApiFail;
-	}
-};
+export const getFlow = async (id: Flow["id"], signal?: AbortSignal) =>
+	await (await $api<FlowDetailed>(`flows/${id}`, { signal })).json();

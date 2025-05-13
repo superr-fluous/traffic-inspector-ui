@@ -16,13 +16,10 @@
 		"sourceMap": true,
 		"noImplicitReturns": true,
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+		"typeRoots": ["./declarations", "./node_modules/@types"],
     "paths": {
-      "@*": ["src/*"]
+      "@*": ["src/*"],
+			"@declarations": ["declarations"],
     }
   },
   "include": ["src", "declarations", "mocks"],

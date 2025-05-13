@@ -36,17 +36,17 @@ const Table = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const doFetch = async () => {
+	const doFetch = async (signal: AbortSignal) => {
 		setIsLoading(true);
-		const res = await getList(currentPage);
+		const res = await getList(currentPage, 20, signal);
 		setIsLoading(false);
 
-		if (res.success) {
+		if (res.ok) {
 			setError(null);
-			setFlows(res.data);
-			setPagination(res.pagination);
+			setFlows(res.data.data)
+			setPagination(res.data.pagination);
 		} else {
-			setError(null);
+			setError(res.error);
 			setFlows([]);
 			setPagination(defaultPagination);
 		}
@@ -57,11 +57,15 @@ const Table = () => {
 	};
 
 	useEffect(() => {
-		// TODO: handle abort + and race conditions
-		doFetch();
-		const intervalId = setInterval(() => { }, 10000);
+		const ctrl = new AbortController();
+
+		doFetch(ctrl.signal);
+		const intervalId = setInterval(() => {
+			doFetch(ctrl.signal);
+		}, 30000);
 
 		return () => {
+			ctrl.abort();
 			clearInterval(intervalId);
 		};
 	}, []);
@@ -129,7 +133,9 @@ const Table = () => {
 												gap: "0.4rem",
 											}}
 										>
-											<$features.open.country.view.flag code={flow.src_country} />
+											<$features.open.country.view.flag
+												code={flow.src_country}
+											/>
 											<Typography variant="tableCell">
 												{flow.src_ip}:{flow.src_port}
 											</Typography>
@@ -143,7 +149,9 @@ const Table = () => {
 												gap: "0.4rem",
 											}}
 										>
-											<$features.open.country.view.flag code={flow.dst_country} />
+											<$features.open.country.view.flag
+												code={flow.dst_country}
+											/>
 											<Typography variant="tableCell">
 												{flow.dst_ip}:{flow.dst_port}
 											</Typography>
@@ -153,7 +161,9 @@ const Table = () => {
 										<Typography variant="tableCell">{flow.protocol}</Typography>
 									</TableCell>
 									<TableCell>
-										<$features.open.category.view.badge category={flow.category} />
+										<$features.open.category.view.badge
+											category={flow.category}
+										/>
 									</TableCell>
 								</TableRow>
 							))}
