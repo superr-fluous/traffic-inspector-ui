@@ -12,6 +12,9 @@
 # production builds
 /build
 
+# are added during container build
+/assets/svg/flags
+
 # debug logs
 *.log*
 

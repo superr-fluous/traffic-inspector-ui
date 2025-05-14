@@ -18,8 +18,7 @@ await esbuild.build({
 	plugins: [
 		copy([
 			{ from: "assets", to: "build/assets" },
-			{ from: "static/index.prod.html", to: "build/index.html" },
-			{ from: "static/404.html", to: "build/assets/templates/404.html" },
+			{ from: "build-templates/index.prod.html", to: "build/index.html" },
 		]),
 		CssModulesPlugin({
 			inject: false,
