@@ -21,7 +21,6 @@ const toc = [
 const Dashboard = () => {
 	return (
 		<>
-			<$features.open.country.view.flag code="RU" size="xl" />
 			<$ui.tableOfContents contents={toc} />
 			<$ui.pageHeader>Dashboard</$ui.pageHeader>
 
