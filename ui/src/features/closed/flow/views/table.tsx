@@ -31,19 +31,19 @@ const Table = () => {
 
 	const [flows, setFlows] = useState<Flow[]>([]);
 	const [currentPage, setCurrentPage] = useState(1);
-	const [pagination, setPagination] =
-		useState<TablePagination>(defaultPagination);
+	const [pagination, setPagination] = useState<TablePagination>(defaultPagination);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const doFetch = async (signal: AbortSignal) => {
 		setIsLoading(true);
 		const res = await getList(currentPage, 20, signal);
+		console.log(res);
 		setIsLoading(false);
 
 		if (res.ok) {
 			setError(null);
-			setFlows(res.data.data)
+			setFlows(res.data.data);
 			setPagination(res.data.pagination);
 		} else {
 			setError(res.error);
@@ -77,19 +77,19 @@ const Table = () => {
 					<TableHead>
 						<TableRow>
 							<TableCell>
-								<Typography variant="tableHeader">Last Seen</Typography>
+								<Typography variant='tableHeader'>Last Seen</Typography>
 							</TableCell>
 							<TableCell>
-								<Typography variant="tableHeader">Source</Typography>
+								<Typography variant='tableHeader'>Source</Typography>
 							</TableCell>
 							<TableCell>
-								<Typography variant="tableHeader">Destination</Typography>
+								<Typography variant='tableHeader'>Destination</Typography>
 							</TableCell>
 							<TableCell>
-								<Typography variant="tableHeader">Protocol</Typography>
+								<Typography variant='tableHeader'>Protocol</Typography>
 							</TableCell>
 							<TableCell>
-								<Typography variant="tableHeader">Category</Typography>
+								<Typography variant='tableHeader'>Category</Typography>
 							</TableCell>
 						</TableRow>
 					</TableHead>
@@ -107,7 +107,7 @@ const Table = () => {
 								textAlign: "center",
 							}}
 						>
-							<Typography align="center" gutterBottom variant="error">
+							<Typography align='center' gutterBottom variant='error'>
 								{error}
 							</Typography>
 						</td>
@@ -115,15 +115,9 @@ const Table = () => {
 					{!isLoading && error === null && (
 						<TableBody>
 							{flows.map((flow) => (
-								<TableRow
-									key={flow.id}
-									hover
-									onClick={() => handleFlowClick(flow.id)}
-								>
+								<TableRow key={flow.id} hover onClick={() => handleFlowClick(flow.id)}>
 									<TableCell>
-										<Typography variant="tableCell">
-											{flow.last_seen}
-										</Typography>
+										<Typography variant='tableCell'>{flow.last_seen}</Typography>
 									</TableCell>
 									<TableCell>
 										<div
@@ -133,10 +127,8 @@ const Table = () => {
 												gap: "0.4rem",
 											}}
 										>
-											<$features.open.country.view.flag
-												code={flow.src_country}
-											/>
-											<Typography variant="tableCell">
+											<$features.open.country.view.flag code={flow.src_country} />
+											<Typography variant='tableCell'>
 												{flow.src_ip}:{flow.src_port}
 											</Typography>
 										</div>
@@ -149,21 +141,17 @@ const Table = () => {
 												gap: "0.4rem",
 											}}
 										>
-											<$features.open.country.view.flag
-												code={flow.dst_country}
-											/>
-											<Typography variant="tableCell">
+											<$features.open.country.view.flag code={flow.dst_country} />
+											<Typography variant='tableCell'>
 												{flow.dst_ip}:{flow.dst_port}
 											</Typography>
 										</div>
 									</TableCell>
 									<TableCell>
-										<Typography variant="tableCell">{flow.protocol}</Typography>
+										<Typography variant='tableCell'>{flow.protocol}</Typography>
 									</TableCell>
 									<TableCell>
-										<$features.open.category.view.badge
-											category={flow.category}
-										/>
+										<$features.open.category.view.badge category={flow.category} />
 									</TableCell>
 								</TableRow>
 							))}
@@ -185,10 +173,11 @@ const Table = () => {
 				showFirstButton
 				showLastButton
 				disabled={isLoading || error !== null}
-				size="large"
+				size='large'
 			/>
 		</>
 	);
 };
 
 export default Table;
+

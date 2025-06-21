@@ -1,12 +1,12 @@
 import ky from "ky";
-import type { AfterResponseHook } from "ky";
+import type { KyInstance, KyResponse, Input, Options } from "ky";
 
-import type { KyRedeclaredInstance } from "declarations/ky";
+import type { AnyObject } from "@shared/helpers/types";
 
-export interface $ApiSuccess<T = Record<string | number | symbol, unknown>> {
+export interface $ApiSuccess<T = AnyObject> {
 	ok: true;
 	data: T;
-};
+}
 
 export interface $ApiFail {
 	ok: false;
@@ -14,13 +14,14 @@ export interface $ApiFail {
 	code: number;
 }
 
-const afterResponse = (async (_, __, res) => {
-	let response: $ApiSuccess | $ApiFail;
+type $ApiOptions = Pick<Options, "signal">;
+
+async function parseNetResponse<T = AnyObject>(res: KyResponse<unknown>) {
+	let response: $ApiSuccess<T> | $ApiFail;
 
 	switch (res.status) {
 		case 200: {
-			const resData: Record<string | number | symbol, unknown> =
-				await res.json();
+			const resData: T = await res.json();
 			response = { ok: true, data: resData };
 			break;
 		}
@@ -28,8 +29,7 @@ const afterResponse = (async (_, __, res) => {
 		case 501:
 		case 503: {
 			let error = "Request prompted an error";
-			const resData: Record<string | number | symbol, unknown> =
-				await res.json();
+			const resData: AnyObject = await res.json();
 			if ("detail" in resData) {
 				error = resData.detail as string;
 			}
@@ -46,18 +46,28 @@ const afterResponse = (async (_, __, res) => {
 	}
 	// TODO: consider possible errors (network and backend); whether to use error from response
 
-	return new Response(JSON.stringify(response));
-}) satisfies AfterResponseHook;
+	return response;
+}
 
-const api = ky.create({
+const kyInstance = ky.create({
 	prefixUrl: "/api/v1",
 	timeout: 30000,
 	retry: { limit: 1 },
 	headers: { "Content-Type": "application/json" },
 	throwHttpErrors: false,
-	hooks: {
-		afterResponse: [afterResponse],
-	},
-}) as KyRedeclaredInstance;
+});
+
+const api = async <T = AnyObject>(url: Input, options?: $ApiOptions) =>
+	parseNetResponse<T>(await kyInstance(url, options));
+api.get = async <T = AnyObject>(url: Input, options?: $ApiOptions) =>
+	parseNetResponse<T>(await kyInstance.get(url, options));
+api.put = async <T = AnyObject>(url: Input, options?: $ApiOptions) =>
+	parseNetResponse<T>(await kyInstance.put(url, options));
+api.post = async <T = AnyObject>(url: Input, options?: $ApiOptions) =>
+	parseNetResponse<T>(await kyInstance.post(url, options));
+api.patch = async <T = AnyObject>(url: Input, options?: $ApiOptions) =>
+	parseNetResponse<T>(await kyInstance.patch(url, options));
+api.delete = async <T = AnyObject>(url: Input, options?: $ApiOptions) =>
+	parseNetResponse<T>(await kyInstance.delete(url, options));
 
 export default api;

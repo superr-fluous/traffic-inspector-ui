@@ -8,50 +8,50 @@ import { useCallback, useEffect, useState } from "react";
  * @returns {[string, function]} - The ID of the element currently in view
  */
 export default function useScrollSpy(
-  ids: string[] = [],
-  options: { rootMargin: string; threshold: number } = {
-    rootMargin: "0px 0px",
-    threshold: 0.1,
-  },
-  scrollBehavior: { behavior: string; block: string } = {
-    behavior: "smooth",
-    block: "center",
-  },
-) {
-  const [activeId, setActiveId] = useState("");
+	ids: string[] = [],
+	options: { rootMargin: string; threshold: number } = {
+		rootMargin: "0px 0px",
+		threshold: 0.1,
+	},
+	scrollBehavior: ScrollIntoViewOptions = {
+		behavior: "smooth",
+		block: "center",
+	},
+): [string, (id: string) => void] {
+	const [activeId, setActiveId] = useState("");
 
-  useEffect(() => {
-    if (typeof window === "undefined" || !("IntersectionObserver" in window))
-      return;
+	useEffect(() => {
+		if (typeof window === "undefined" || !("IntersectionObserver" in window))
+			return;
 
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+		const observer = new IntersectionObserver((entries) => {
+			const visible = entries
+				.filter((entry) => entry.isIntersecting)
+				.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
 
-      if (visible.length > 0) {
-        setActiveId(visible[0].target.id);
-      }
-    }, options);
+			if (visible.length > 0) {
+				setActiveId(visible[0].target.id);
+			}
+		}, options);
 
-    const elements = ids
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
-    elements.forEach((el) => observer.observe(el));
+		const elements = ids
+			.map((id) => document.getElementById(id))
+			.filter((el) => el !== null);
+		elements.forEach((el) => observer.observe(el));
 
-    return () => elements.forEach((el) => observer.unobserve(el));
-  }, [ids, options.rootMargin, options.threshold]);
+		return () => elements.forEach((el) => observer.unobserve(el));
+	}, [ids, options.rootMargin, options.threshold]);
 
-  // Scroll to a section with optional smooth scroll
-  const scrollToId = useCallback(
-    (id) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView(scrollBehavior);
-      }
-    },
-    [scrollBehavior],
-  );
+	// Scroll to a section with optional smooth scroll
+	const scrollToId = useCallback(
+		(id: string) => {
+			const el = document.getElementById(id);
+			if (el !== null) {
+				el.scrollIntoView(scrollBehavior);
+			}
+		},
+		[scrollBehavior],
+	);
 
-  return [activeId, scrollToId];
+	return [activeId, scrollToId];
 }

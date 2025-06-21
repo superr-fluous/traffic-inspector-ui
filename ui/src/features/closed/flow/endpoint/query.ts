@@ -16,7 +16,8 @@ export interface ApiResponse {
 }
 
 export const getList = async (page: number, limit = 20, signal?: AbortSignal) =>
-	await (await $api<ApiResponse>(`flows/all?page=${page}&limit=${limit}`, { signal })).json();
+	await $api<ApiResponse>(`flows/all?page=${page}&limit=${limit}`, { signal });
 
 export const getFlow = async (id: Flow["id"], signal?: AbortSignal) =>
-	await (await $api<FlowDetailed>(`flows/${id}`, { signal })).json();
+	await $api<FlowDetailed>(`flows/${id}`, { signal });
+
