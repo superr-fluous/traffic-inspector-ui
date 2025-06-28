@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>404 - Page Not Found</title>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #0d0f12;
+			font-family: sans-serif;
+			color: #faf0e6;
+			text-align: center;
+			height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+		}
+
+		h1 {
+			font-size: 6em;
+			margin: 0;
+			color: #766ac8;
+		}
+
+		p {
+			font-size: 1.5em;
+			color: #faf0e6;
+		}
+
+		.container {
+			text-align: center;
+		}
+
+		.button {
+			padding: 10px 20px;
+			background-color: #766ac8;
+			color: #faf0e6;
+			font-size: 1.2em;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			text-decoration: none;
+		}
+
+		.button:hover {
+			background-color: #5c59a3;
+		}
+
+		.button.secondary {
+			background-color: #504e4b;
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<h1>404</h1>
+		<p>Oops! The page you are looking for could not be found.</p>
+		<a href="/dashboard" class="button">Return to Dashboard</a>
+		<a class="button secondary" onclick="javascript:window.history.back()">Go back</a>
+	</div>
+</body>
+
+</html>

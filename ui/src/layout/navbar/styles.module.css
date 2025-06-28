@@ -1,0 +1,92 @@
+.navbar {
+	flex: 0 0 12rem;
+
+	height: 100%;
+	max-height: 100%;
+	width: 100%;
+	max-width: 100%;
+
+	padding-block: 2rem;
+	background: var(--nav-bg);
+
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.logo-container {
+	border-top: 3px solid var(--bg);
+	flex: 0 0 auto;
+	padding-inline: 2rem;
+	padding-block: 2rem 0;
+}
+
+.nav-list {
+	flex: 1 1 auto;
+	width: 100%;
+
+	margin: 0;
+	padding: 0;
+	list-style: none;
+
+	display: flex;
+	flex-direction: column;
+	row-gap: 1rem;
+}
+
+.nav-list a {
+	color: inherit;
+	display: block;
+	text-decoration: none;
+}
+
+.nav-list li {
+	height: fit-content;
+
+	padding-block: 1rem;
+	padding-inline: 2rem;
+	margin-inline: 1rem 0;
+	/* prevent animation glitch on right side */
+	/* transition: background 1s ease-in-out; */
+	color: var(--bg);
+}
+
+.nav-list li.active {
+	view-transition-name: nav;
+	display: block;
+	background: var(--bg);
+	color: var(--nav-bg);
+	position: relative;
+	/* z-index: -1; */
+	border-radius: 100vw 0 0 100vw;
+}
+
+::view-transition-group(nav) {
+	animation-duration: 1s;
+}
+
+.nav-list li.active::before,
+.nav-list li.active::after {
+	--border-radius: 1rem;
+
+	content: "";
+	position: absolute;
+	width: var(--border-radius);
+	height: var(--border-radius);
+	right: 0rem;
+	bottom: 0;
+	background: var(--nav-bg);
+}
+
+.nav-list li.active::before {
+	border-radius: 0 0 var(--border-radius);
+	top: calc(var(--border-radius) * -1);
+	box-shadow: 5px 5px 0 5px var(--bg);
+}
+
+.nav-list li.active::after {
+	border-radius: 0 var(--border-radius) 0 0;
+	bottom: calc(var(--border-radius) * -1);
+	box-shadow: 5px -5px 0 5px var(--bg);
+}
+
