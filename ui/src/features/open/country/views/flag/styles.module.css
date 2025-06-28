@@ -1,0 +1,65 @@
+.flag-hover-wrapper {
+	display: inline-block;
+	transition: transform 0.2s ease;
+}
+
+.flag-hover-wrapper:hover {
+	transform: scale(1.15);
+}
+
+.flag-container {
+	position: relative;
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	border: 3px solid var(--accent);
+	overflow: hidden;
+}
+
+.flag-container.xl {
+	width: 96px;
+	height: 96px;
+}
+
+.flag-container.md {
+	width: 64px;
+	height: 64px;
+}
+
+.flag-container.sm {
+	width: 32px;
+	height: 32px;
+}
+
+.flag-container.xs {
+	width: 16px;
+	height: 16px;
+}
+
+.flag-container img {
+	width: 100%;
+	height: 100%;
+	display: block;
+	object-fit: cover;
+}
+
+.flag-hover-wrapper:hover .flag-label {
+	opacity: 1;
+}
+
+.flag-label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px;
+	text-align: center;
+	font-size: 0.8rem;
+	color: var(--off-white);
+	background: rgba(0, 0, 0, 0.75); /* Semi-transparent overlay */
+	opacity: 0;
+	transition: opacity 0.2s ease;
+	pointer-events: auto;
+	user-select: text;
+}

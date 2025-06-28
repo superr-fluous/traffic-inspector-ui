@@ -20,8 +20,8 @@ CREATE TABLE FLOW_INFO (
         first_seen timestamp,
         last_seen timestamp,
         src_num_pkts bigint,
-	dst_num_pkts bigint,
-	src_len_pkts bigint,
-	dst_len_pkts bigint,
+				dst_num_pkts bigint,
+				src_len_pkts bigint,
+				dst_len_pkts bigint,
         ndpi JSONB
 );

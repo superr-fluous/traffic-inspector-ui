@@ -1,0 +1,54 @@
+services:
+  backend:
+    build:
+      context: ./api
+    container_name: backend
+    networks:
+      - backend-net
+      - postgres-net
+    expose:
+      - "8000"
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_DBNAME: traffic_inspector
+      POSTGRES_USER: traffic_inspector
+      POSTGRES_PASSWORD: password # secret not really needed rn
+      POSTGRES_PORT: 5432
+      API_ENDPOINT: :8000
+
+  nginx:
+    build:
+      context: ./ui
+    container_name: nginx
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - backend-net
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: traffic_inspector
+      POSTGRES_USER: traffic_inspector
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/flow_info.sql:/docker-entrypoint-initdb.d/1.sql
+    networks:
+      - postgres-net  # only accessible to backend
+
+networks:
+  backend-net:
+    driver: bridge
+  postgres-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
