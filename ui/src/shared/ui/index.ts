@@ -3,6 +3,7 @@ import Widget from "./widget";
 import Loader from "./loader";
 
 import Overlay from "./overlay";
+import Dashboard from "./dashboard";
 import Scrollable from "./scrollable";
 import PageHeader from "./page-header";
 import BlockHeader from "./block-header";
@@ -13,6 +14,7 @@ export default {
 	widget: Widget,
 	loader: Loader,
 	overlay: Overlay,
+	dashboard: Dashboard,
 	scrollable: Scrollable,
 	pageHeader: PageHeader,
 	blockHeader: BlockHeader,
