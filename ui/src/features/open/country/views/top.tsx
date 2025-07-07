@@ -11,9 +11,9 @@ const Pie: FC = () => {
 	});
 
 	return (
-		<$ui.widget loading={isLoading} error={error} header='Top Countries' size={{ w: "100%" }}>
+		<$ui.loader loading={isLoading} error={error} size='xl'>
 			<$ui.charts.pie data={data} />
-		</$ui.widget>
+		</$ui.loader>
 	);
 };
 

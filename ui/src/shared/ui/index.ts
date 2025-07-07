@@ -1,5 +1,4 @@
 import Charts from "./charts";
-import Widget from "./widget";
 import Loader from "./loader";
 
 import Overlay from "./overlay";
@@ -11,7 +10,6 @@ import TableOfContents from "./table-of-contents";
 
 export default {
 	charts: Charts,
-	widget: Widget,
 	loader: Loader,
 	overlay: Overlay,
 	dashboard: Dashboard,

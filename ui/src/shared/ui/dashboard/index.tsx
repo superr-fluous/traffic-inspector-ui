@@ -3,24 +3,29 @@ import type { FC, ReactNode } from "react";
 
 import { $ui, $helpers } from "@shared";
 
+import Widget from "./ui/widget";
 import Toolbar from "./ui/toolbar";
+import ManagePanel from "./ui/manage-panel";
+
 import { calcEmptySlots } from "./helpers";
-import type { EmptySlot, Widget } from "./model";
+
+import type { EmptySlot, WidgetModel } from "./model";
 
 import styles from "./styles.module.css";
 
 const ROW_CELLS = 4;
 
 interface Props {
-	widgets: Widget[];
+	widgets: WidgetModel[];
 	onAddWidget: (slot: EmptySlot) => void;
-	onDeleteWidget: (id: Widget["id"]) => void;
+	onDeleteWidget: (id: WidgetModel["id"]) => void;
 }
 
 const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget }) => {
 	const [internalWidgets, setInternalWidgets] = useState(widgets);
 	const [showEmptySlots, setShowEmptySlots] = useState(false);
 	const [showDelete, setShowDelete] = useState(false);
+	const [showManagePanel, setShowManagePanel] = useState(false);
 
 	const gridRef = useRef<HTMLDivElement>(null);
 	const emptySlots = useRef<EmptySlot[]>([]);
@@ -31,7 +36,7 @@ const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget }) => {
 		setShowEmptySlots(false);
 	};
 
-	const deleteWidget = (id: Widget["id"]) => {
+	const deleteWidget = (id: WidgetModel["id"]) => {
 		onDeleteWidget(id);
 		setShowDelete(false);
 	};
@@ -73,25 +78,26 @@ const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget }) => {
 	const Tiles = useMemo(
 		() =>
 			internalWidgets.map((widget) => (
-				<div
+				<Widget
+					widget={widget}
 					style={{ gridRow: `${widget.y + 1} / span ${widget.h}`, gridColumn: `${widget.x + 1} / span ${widget.w}` }}
 					className={$helpers.clsx(styles.tile, showDelete && styles.delete)}
 					key={widget.id}
 					onClick={showDelete ? () => deleteWidget(widget.id) : undefined}
-				>
-					{widget.children}
-				</div>
+				/>
 			)),
 		[internalWidgets, showDelete]
 	);
 
 	return (
 		<div className={styles.wrapper}>
+			<ManagePanel open={showManagePanel} onClose={() => setShowManagePanel(false)} widgets={widgets} />
 			<Toolbar
 				addMode={showEmptySlots}
 				deleteMode={showDelete}
 				onCancel={cancelToolbarAction}
 				onDelete={() => setShowDelete(true)}
+				onManageWidgets={() => setShowManagePanel(true)}
 				onSelectWidgetSize={selectWidgetSize}
 			/>
 

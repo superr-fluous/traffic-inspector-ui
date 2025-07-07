@@ -11,13 +11,13 @@ const Line: FC = () => {
 	});
 
 	return (
-		<$ui.widget loading={isLoading} error={error} header='Flows Over Time' size={{ w: "100%" }}>
+		<$ui.loader loading={isLoading} error={error} size='xl'>
 			<$ui.charts.line
 				data={data}
 				axisBottom={{ legend: "Time", legendOffset: 36 }}
 				axisLeft={{ legend: "Flows", legendOffset: -40 }}
 			/>
-		</$ui.widget>
+		</$ui.loader>
 	);
 };
 

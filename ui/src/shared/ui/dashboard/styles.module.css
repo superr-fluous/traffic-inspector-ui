@@ -27,6 +27,8 @@
 }
 
 .wrapper {
+	position: relative;
+
 	display: flex;
 	flex-direction: column;
 	justify-content: start;
@@ -50,15 +52,24 @@
 	overflow: hidden;
 
 	display: flex;
-	justify-content: flex-end;
+	justify-content: space-between;
 	gap: 0.5rem;
 
-	padding-inline: 2rem;
+	padding-inline-end: 2rem;
 	padding-block: 0.5rem;
 	border-bottom: 1px solid var(--nav-bg);
 }
 
+.toolbar .toolbar-group {
+	flex: 0 0 auto;
+	display: inline-flex;
+	gap: 0.5rem;
+	justify-content: flex-start;
+}
+
 .grid-layout {
+	position: relative;
+
 	flex: 1 1 auto;
 	max-height: 100%;
 	width: 100%;
@@ -95,10 +106,34 @@
 	background: hsla(248, 46%, 60%, 0.6);
 }
 
+.grid-layout .tile:global(.highlight) {
+	background: hsla(248, 46%, 60%, 0.6);
+}
+
 .grid-layout .tile.delete:hover {
 	background: hsla(0, 100%, 62%, 0.6);
 	cursor: pointer;
 	pointer-events: all;
 	opacity: 1;
 	/* x-mark */
+}
+
+.widget-container {
+	padding: 0.75rem;
+
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+
+	background-color: transparent;
+}
+
+.widget-container .widget-header {
+	flex: 0 0 auto;
+}
+
+.widget-container .widget-wrapper {
+	flex: 1 1 auto;
+	max-height: 100%;
+	overflow: hidden;
 }

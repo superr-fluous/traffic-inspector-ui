@@ -11,14 +11,14 @@ const Bar: FC = () => {
 	});
 
 	return (
-		<$ui.widget loading={isLoading} error={error} header='Top IP Addresses' size={{ w: "100%" }}>
+		<$ui.loader loading={isLoading} error={error} size='xl'>
 			<$ui.charts.bar
 				data={data}
 				label={(d) => d.data.id as string}
 				axisBottom={{ legend: "IP Address", legendOffset: 36 }}
 				axisLeft={{ legend: "Flows", legendOffset: -40 }}
 			/>
-		</$ui.widget>
+		</$ui.loader>
 	);
 };
 
