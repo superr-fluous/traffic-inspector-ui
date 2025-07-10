@@ -1,7 +1,5 @@
 import React, { ReactNode } from "react";
 
-import Drawer from "@mui/material/Drawer";
-import KeyboardReturnIcon from "@mui/icons-material/KeyboardReturn";
 import UndoIcon from "@mui/icons-material/Undo";
 
 import { useLocation, useParams } from "wouter";
@@ -11,7 +9,6 @@ import { $features } from "@features";
 
 import PageWrapper from "@layout/page";
 import { Button, IconButton, Link } from "@mui/material";
-import { COLORS } from "@layout/theme";
 
 const Page = () => {
 	const { id: flowID } = useParams();

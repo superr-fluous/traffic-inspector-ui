@@ -1,11 +1,7 @@
 import type { ReactNode } from "react";
+import { Layout } from "react-grid-layout";
 
-export interface WidgetModel {
-	x: number;
-	y: number;
-	w: number;
-	h: number;
-	id: string;
+export interface WidgetModel extends Layout {
 	name: string;
 	active: boolean;
 	children: ReactNode;

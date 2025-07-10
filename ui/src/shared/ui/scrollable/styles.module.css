@@ -1,8 +1,12 @@
 .scrollable {
-  height: 100%;
-  max-height: 100%;
-  overflow: auto;
+	height: 100%;
+	max-height: 100%;
+	width: 100%;
+	max-width: 100%;
 
-  scrollbar-color: var(--accent) var(--bg);
-  scrollbar-width: thin;
+	overflow: auto;
+
+	scrollbar-color: var(--accent) var(--bg);
+	scrollbar-width: thin;
 }
+

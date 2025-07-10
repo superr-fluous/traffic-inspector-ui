@@ -1,5 +1,6 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { FC, ReactNode } from "react";
+import React, { useEffect, useState } from "react";
+import GridLayout, { WidthProvider } from "react-grid-layout";
+import type { FC } from "react";
 
 import { $ui, $helpers } from "@shared";
 
@@ -7,103 +8,77 @@ import Widget from "./ui/widget";
 import Toolbar from "./ui/toolbar";
 import ManagePanel from "./ui/manage-panel";
 
-import { calcEmptySlots } from "./helpers";
-
-import type { EmptySlot, WidgetModel } from "./model";
+import type { WidgetModel } from "./model";
 
 import styles from "./styles.module.css";
 
-const ROW_CELLS = 4;
+const Grid = WidthProvider(GridLayout);
 
 interface Props {
 	widgets: WidgetModel[];
-	onAddWidget: (slot: EmptySlot) => void;
-	onDeleteWidget: (id: WidgetModel["id"]) => void;
+	onAddWidget: (size: { w: number; h: number }) => void;
+	onDeleteWidget: (id: WidgetModel["i"]) => void;
+	onEnable: (id: WidgetModel["i"], enable: boolean) => void;
 }
 
-const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget }) => {
-	const [internalWidgets, setInternalWidgets] = useState(widgets);
-	const [showEmptySlots, setShowEmptySlots] = useState(false);
+/*
+ idk... in general this is fine, rerender overhead shouldn't be too much if optimized here and there, maybe it'll be fine even without the optimization
+ gridstackjs is poorly adjustable for react, having to balance both GridStack internal state and translate it to React's state is too finicky
+ kinda preffered DIY version, maybe should move to it eventually if no-drag'n'drop is okay 
+*/
+const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget, onEnable }) => {
 	const [showDelete, setShowDelete] = useState(false);
+	const [displayWidget, setDisplayWidgets] = useState<WidgetModel[]>([]); // this empty default state is crucial, since we need a rerender in order to extract widgets container for react portal
+	const [showEmptySlots, setShowEmptySlots] = useState(false);
 	const [showManagePanel, setShowManagePanel] = useState(false);
-
-	const gridRef = useRef<HTMLDivElement>(null);
-	const emptySlots = useRef<EmptySlot[]>([]);
-	const EmptyTiles = useRef<ReactNode[]>([]);
 
 	const cancelToolbarAction = () => {
 		setShowDelete(false);
 		setShowEmptySlots(false);
 	};
 
-	const deleteWidget = (id: WidgetModel["id"]) => {
-		onDeleteWidget(id);
-		setShowDelete(false);
-	};
-
-	const addWidget = (slot: EmptySlot) => {
-		setShowEmptySlots(false);
-		onAddWidget(slot);
-	};
-
-	const selectWidgetSize = (size: { w: number; h: number }) => {
-		emptySlots.current = calcEmptySlots(internalWidgets, size, ROW_CELLS);
-		EmptyTiles.current = emptySlots.current.map((slot) => (
-			<div
-				style={{ gridRow: `${slot.y + 1} / span ${slot.h}`, gridColumn: `${slot.x + 1} / span ${slot.w}` }}
-				className={$helpers.clsx(styles.tile, styles.empty)}
-				data-slot={slot}
-				onClick={() => addWidget(slot)}
-				key={`${slot.x}x${slot.y}`}
-				id='empty-tile'
-			>
-				Empty
-			</div>
-		));
-
-		setShowEmptySlots(true);
-	};
-
-	useLayoutEffect(() => {
-		setInternalWidgets(widgets);
-		console.log("set internal widgets");
-	}, [widgets]);
-
 	useEffect(() => {
-		if (showEmptySlots && gridRef.current !== null) {
-			document.getElementById("empty-tile")?.scrollIntoView({ behavior: "smooth", block: "start", inline: "center" });
-		}
-	}, [showEmptySlots]);
-
-	const Tiles = useMemo(
-		() =>
-			internalWidgets.map((widget) => (
-				<Widget
-					widget={widget}
-					style={{ gridRow: `${widget.y + 1} / span ${widget.h}`, gridColumn: `${widget.x + 1} / span ${widget.w}` }}
-					className={$helpers.clsx(styles.tile, showDelete && styles.delete)}
-					key={widget.id}
-					onClick={showDelete ? () => deleteWidget(widget.id) : undefined}
-				/>
-			)),
-		[internalWidgets, showDelete]
-	);
+		setDisplayWidgets(widgets.filter((w) => w.active));
+	}, [widgets]);
 
 	return (
 		<div className={styles.wrapper}>
-			<ManagePanel open={showManagePanel} onClose={() => setShowManagePanel(false)} widgets={widgets} />
+			<ManagePanel
+				open={showManagePanel}
+				onClose={() => setShowManagePanel(false)}
+				widgets={widgets}
+				onEnable={onEnable}
+				onDelete={onDeleteWidget}
+			/>
 			<Toolbar
 				addMode={showEmptySlots}
-				deleteMode={showDelete}
 				onCancel={cancelToolbarAction}
-				onDelete={() => setShowDelete(true)}
 				onManageWidgets={() => setShowManagePanel(true)}
-				onSelectWidgetSize={selectWidgetSize}
+				onSelectWidgetSize={onAddWidget}
 			/>
 
-			<$ui.scrollable ref={gridRef} className={styles["grid-layout"]}>
-				{Tiles}
-				{showEmptySlots && EmptyTiles.current}
+			<$ui.scrollable
+				className={$helpers.clsx(styles["grid-layout-wrapper"], showDelete && styles["show-delete-overlay"])}
+			>
+				<Grid
+					cols={4}
+					rowHeight={192}
+					layout={displayWidget}
+					margin={[12, 12]}
+					isBounded
+					style={{
+						position: "relative",
+					}} /* actually 🤡 for making me specify that with react-grid-item having a position: absolute */
+				>
+					{displayWidget.map((widget) => (
+						<Widget
+							key={widget.i}
+							id={widget.i}
+							widget={widget}
+							onClick={showDelete ? () => onDeleteWidget(widget.i) : undefined}
+						/>
+					))}
+				</Grid>
 			</$ui.scrollable>
 		</div>
 	);
