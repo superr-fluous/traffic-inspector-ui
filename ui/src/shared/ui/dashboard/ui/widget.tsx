@@ -15,7 +15,7 @@ type Props = ComponentProps<"div"> & {
 };
 
 const Widget: FC<Props> = ({ widget, className, ...props }) => (
-	<div {...props} id={widget.id} className={$helpers.clsx(className, styles["widget-container"])}>
+	<div {...props} id={widget.i} className={$helpers.clsx(className, styles["widget-container"])}>
 		<Typography variant='tableHeader'>{widget.name}</Typography>
 		<Divider />
 		<div className={styles["widget-wrapper"]}>{widget.children}</div>

@@ -30,4 +30,5 @@ body {
 	--grey: #aba9a6;
 	--error: #ff3b3b;
 	--disabled: #504e4b;
+	--bg-800: hsla(216, 16%, 6%, 0.8);
 }

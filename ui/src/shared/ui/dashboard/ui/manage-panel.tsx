@@ -22,15 +22,17 @@ interface Props {
 	open: boolean;
 	widgets: WidgetModel[];
 	onClose: VoidFunction;
+	onDelete: (id: WidgetModel["i"]) => void;
+	onEnable: (id: WidgetModel["i"], enable: boolean) => void;
 }
 
-const ManagePanel: FC<Props> = ({ open, widgets, onClose }) => {
-	const onItemHover = (id: WidgetModel["id"]) => {
+const ManagePanel: FC<Props> = ({ open, widgets, onClose, onDelete, onEnable }) => {
+	const onItemHover = (id: WidgetModel["i"]) => {
 		console.log("enter");
 		document.getElementById(id)?.classList?.add("highlight");
 	};
 
-	const onItemLeave = (id: WidgetModel["id"]) => {
+	const onItemLeave = (id: WidgetModel["i"]) => {
 		console.log("leave");
 		document.getElementById(id)?.classList?.remove("highlight");
 	};
@@ -47,7 +49,7 @@ const ManagePanel: FC<Props> = ({ open, widgets, onClose }) => {
 				"& .MuiDrawer-paper": {
 					width: "25%",
 					boxSizing: "border-box",
-					background: "var(--bg)",
+					background: "var(--bg-800)",
 					borderLeft: "2px solid hsla(248, 46%, 60%, 0.3)",
 					padding: "0.25rem",
 					display: "flex",
@@ -56,6 +58,7 @@ const ManagePanel: FC<Props> = ({ open, widgets, onClose }) => {
 					maxHeight: "100%",
 					overflowX: "hidden",
 					overflowY: "auto",
+					backdropFilter: "blur(7px)",
 				},
 			}}
 		>
@@ -78,15 +81,15 @@ const ManagePanel: FC<Props> = ({ open, widgets, onClose }) => {
 				{widgets.map((widget) => (
 					<ListItem
 						slotProps={{
-							root: { onMouseEnter: () => onItemHover(widget.id), onMouseLeave: () => onItemLeave(widget.id) },
+							root: { onMouseEnter: () => onItemHover(widget.i), onMouseLeave: () => onItemLeave(widget.i) },
 						}}
 						dense
-						key={widget.id}
+						key={widget.i}
 						secondaryAction={
 							<div
 								style={{ display: "inline-flex", gap: "0.25rem", alignItems: "center", justifyContent: "flex-start" }}
 							>
-								<IconButton color='primary'>
+								<IconButton color='primary' onClick={() => onDelete(widget.i)}>
 									<DeleteForever />
 								</IconButton>
 								<IconButton color='primary'>
@@ -97,7 +100,12 @@ const ManagePanel: FC<Props> = ({ open, widgets, onClose }) => {
 					>
 						<ListItemButton>
 							<ListItemIcon>
-								<Switch edge='start' checked={widget.active} color='primary' />
+								<Switch
+									edge='start'
+									checked={widget.active}
+									color='primary'
+									onChange={(_, checked) => onEnable(widget.i, checked)}
+								/>
 							</ListItemIcon>
 							<ListItemText slotProps={{ primary: { sx: { fontSize: "1rem" } } }}>{widget.name}</ListItemText>
 						</ListItemButton>
