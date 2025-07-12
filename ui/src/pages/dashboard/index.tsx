@@ -88,35 +88,10 @@ const defaultWidgets: WidgetModel[] = [
 		children: <$features.open.category.view.chart.top />,
 	},
 ];
-
-const newWidget = (size: { w: number; h: number }): WidgetModel => ({
-	...size,
-	x: Infinity,
-	y: Infinity,
-	i: nanoid(),
-	name: "New widget",
-	active: true,
-	children: "New widget",
-});
-
 const Dashboard = () => {
 	const [widgets, setWidgets] = useState(defaultWidgets);
 
-	const addWidget = (size: { w: number; h: number }) => {
-		setWidgets([...widgets, newWidget(size)]);
-	};
-
-	const deleteWidget = (id: WidgetModel["i"]) => {
-		setWidgets((current) => current.filter((widget) => widget.i !== id));
-	};
-
-	const enableWidget = (id: WidgetModel["i"], enable: WidgetModel["active"]) => {
-		setWidgets((current) => current.map((widget) => (widget.i === id ? { ...widget, active: enable } : widget)));
-	};
-
-	return (
-		<$ui.dashboard widgets={widgets} onAddWidget={addWidget} onDeleteWidget={deleteWidget} onEnable={enableWidget} />
-	);
+	return <$ui.dashboard widgets={widgets} onChange={() => {}} />;
 };
 
 export default Dashboard;

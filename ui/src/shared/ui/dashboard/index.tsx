@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import GridLayout, { WidthProvider } from "react-grid-layout";
 import type { FC } from "react";
 
@@ -11,14 +11,13 @@ import ManagePanel from "./ui/manage-panel";
 import type { WidgetModel } from "./model";
 
 import styles from "./styles.module.css";
+import { makeWidget } from "./helpers";
 
 const Grid = WidthProvider(GridLayout);
 
 interface Props {
 	widgets: WidgetModel[];
-	onAddWidget: (size: { w: number; h: number }) => void;
-	onDeleteWidget: (id: WidgetModel["i"]) => void;
-	onEnable: (id: WidgetModel["i"], enable: boolean) => void;
+	onChange: (widgets: WidgetModel[]) => void;
 }
 
 /*
@@ -26,35 +25,77 @@ interface Props {
  gridstackjs is poorly adjustable for react, having to balance both GridStack internal state and translate it to React's state is too finicky
  kinda preffered DIY version, maybe should move to it eventually if no-drag'n'drop is okay 
 */
-const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget, onEnable }) => {
+const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 	const [showDelete, setShowDelete] = useState(false);
-	const [displayWidget, setDisplayWidgets] = useState<WidgetModel[]>([]); // this empty default state is crucial, since we need a rerender in order to extract widgets container for react portal
 	const [showEmptySlots, setShowEmptySlots] = useState(false);
 	const [showManagePanel, setShowManagePanel] = useState(false);
+	const [internalWidgets, setInternalWidgets] = useState<WidgetModel[]>(widgets); // this empty default state is crucial, since we need a rerender in order to extract widgets container for react portal
+
+	const prevWidgetsSize = useRef<number>(internalWidgets.length);
+	const lastAddedWidgetId = useRef<WidgetModel["i"]>(null);
 
 	const cancelToolbarAction = () => {
 		setShowDelete(false);
 		setShowEmptySlots(false);
 	};
 
+	const enableWidget = (id: WidgetModel["i"], enabled: WidgetModel["active"]) => {
+		setInternalWidgets((current) => current.map((w) => (w.i === id ? { ...w, active: enabled } : w)));
+	};
+
+	const deleteWidget = (id: WidgetModel["i"]) => {
+		setInternalWidgets((current) => current.filter((w) => w.i !== id));
+	};
+
+	const addWidget = (size: { w: number; h: number }, signalChange = false) => {
+		const widget = makeWidget(size);
+		const widgets = [...internalWidgets, widget];
+
+		setInternalWidgets(widgets);
+		lastAddedWidgetId.current = widget.i;
+
+		if (signalChange) {
+			onChange(widgets);
+		}
+	};
+
+	const confirmChanges = () => {
+		setShowManagePanel(false);
+		onChange(internalWidgets);
+	};
+
 	useEffect(() => {
-		setDisplayWidgets(widgets.filter((w) => w.active));
-	}, [widgets]);
+		if (internalWidgets.length === prevWidgetsSize.current + 1 && lastAddedWidgetId.current !== null) {
+			// widget added
+			document
+				.getElementById(lastAddedWidgetId.current)
+				?.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+		}
+
+		return () => {
+			prevWidgetsSize.current = internalWidgets.length;
+		};
+	}, [internalWidgets]);
+
+	const displayWidgets = useMemo(() => internalWidgets.filter((widget) => widget.active), [internalWidgets]);
 
 	return (
 		<div className={styles.wrapper}>
 			<ManagePanel
 				open={showManagePanel}
+				widgets={internalWidgets}
+				onAdd={addWidget}
 				onClose={() => setShowManagePanel(false)}
-				widgets={widgets}
-				onEnable={onEnable}
-				onDelete={onDeleteWidget}
+				onConfirm={confirmChanges}
+				onDelete={deleteWidget}
+				onEnable={enableWidget}
+				onReset={() => setInternalWidgets(widgets)}
 			/>
 			<Toolbar
 				addMode={showEmptySlots}
 				onCancel={cancelToolbarAction}
 				onManageWidgets={() => setShowManagePanel(true)}
-				onSelectWidgetSize={onAddWidget}
+				onSelectWidgetSize={addWidget}
 			/>
 
 			<$ui.scrollable
@@ -63,20 +104,15 @@ const Dashboard: FC<Props> = ({ widgets, onAddWidget, onDeleteWidget, onEnable }
 				<Grid
 					cols={4}
 					rowHeight={192}
-					layout={displayWidget}
+					layout={displayWidgets}
 					margin={[12, 12]}
 					isBounded
 					style={{
 						position: "relative",
-					}} /* actually 🤡 for making me specify that with react-grid-item having a position: absolute */
+					}} /* actually 🤡 for making me specify that with react-grid-item already having a position: absolute */
 				>
-					{displayWidget.map((widget) => (
-						<Widget
-							key={widget.i}
-							id={widget.i}
-							widget={widget}
-							onClick={showDelete ? () => onDeleteWidget(widget.i) : undefined}
-						/>
+					{displayWidgets.map((widget) => (
+						<Widget key={widget.i} id={widget.i} widget={widget} />
 					))}
 				</Grid>
 			</$ui.scrollable>

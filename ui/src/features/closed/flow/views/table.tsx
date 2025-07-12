@@ -95,7 +95,7 @@ const Table = () => {
 					</TableHead>
 					{isLoading && (
 						<td colSpan={5} style={{ height: "72px" }}>
-							<$ui.loader size={52} thickness={3} />
+							<$ui.loader loading={isLoading} error={error} size={52} thickness={3} />
 						</td>
 					)}
 					{!isLoading && error !== null && (
@@ -180,4 +180,3 @@ const Table = () => {
 };
 
 export default Table;
-

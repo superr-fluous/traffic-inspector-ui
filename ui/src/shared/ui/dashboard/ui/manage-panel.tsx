@@ -1,40 +1,73 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { FC } from "react";
 
+import Menu from "@mui/material/Menu";
 import List from "@mui/material/List";
+import Button from "@mui/material/Button";
 import Switch from "@mui/material/Switch";
 import Drawer from "@mui/material/Drawer";
 import Divider from "@mui/material/Divider";
+import MenuItem from "@mui/material/MenuItem";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemButton from "@mui/material/ListItemButton";
-import DoubleArrowIcon from "@mui/icons-material/DoubleArrow";
 
+import AddIcon from "@mui/icons-material/Add";
 import TextFormat from "@mui/icons-material/TextFormat";
 import DeleteForever from "@mui/icons-material/DeleteForever";
+import DoubleArrowIcon from "@mui/icons-material/DoubleArrow";
 
 import type { WidgetModel } from "../model";
 
 interface Props {
 	open: boolean;
 	widgets: WidgetModel[];
+	onReset: VoidFunction;
 	onClose: VoidFunction;
+	onConfirm: VoidFunction;
+	onAdd: (size: { w: number; h: number }) => void;
 	onDelete: (id: WidgetModel["i"]) => void;
-	onEnable: (id: WidgetModel["i"], enable: boolean) => void;
+	onEnable: (id: WidgetModel["i"], enabled: WidgetModel["active"]) => void;
 }
 
-const ManagePanel: FC<Props> = ({ open, widgets, onClose, onDelete, onEnable }) => {
+const ManagePanel: FC<Props> = ({ open, widgets, onEnable, onAdd, onDelete, onClose, onConfirm, onReset }) => {
+	const [showSizeMenu, setShowSizeMenu] = useState(false);
+
+	const menuAnchor = useRef<HTMLButtonElement>(null);
+	const highlightTimeout = useRef<NodeJS.Timeout>(null);
+
+	const highlight = (id: WidgetModel["i"]) => {
+		const elem = document.getElementById(id);
+
+		if (elem !== null) {
+			elem.classList.add("highlight");
+			elem.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+		}
+		highlightTimeout.current = null;
+	};
+
 	const onItemHover = (id: WidgetModel["i"]) => {
-		console.log("enter");
-		document.getElementById(id)?.classList?.add("highlight");
+		highlightTimeout.current = setTimeout(highlight, 350, id);
 	};
 
 	const onItemLeave = (id: WidgetModel["i"]) => {
-		console.log("leave");
-		document.getElementById(id)?.classList?.remove("highlight");
+		if (highlightTimeout.current !== null) {
+			clearTimeout(highlightTimeout.current);
+		} else {
+			const elem = document.getElementById(id);
+
+			if (elem !== null) {
+				elem.classList.remove("highlight");
+			}
+		}
+	};
+
+	const selectWidgetSize = (size: { w: number; h: number }) => {
+		setShowSizeMenu(false);
+		onAdd(size);
 	};
 
 	return (
@@ -51,7 +84,6 @@ const ManagePanel: FC<Props> = ({ open, widgets, onClose, onDelete, onEnable }) 
 					boxSizing: "border-box",
 					background: "var(--bg-800)",
 					borderLeft: "2px solid hsla(248, 46%, 60%, 0.3)",
-					padding: "0.25rem",
 					display: "flex",
 					flexDirection: "column",
 					height: "100%",
@@ -62,56 +94,107 @@ const ManagePanel: FC<Props> = ({ open, widgets, onClose, onDelete, onEnable }) 
 				},
 			}}
 		>
+			<Divider sx={{ flex: "0 0 1px", borderWidth: "1px", borderColor: "hsla(248, 46%, 60%, 0.3)" }} />
 			<div
 				style={{
 					display: "inline-flex",
 					justifyContent: "space-between",
 					alignItems: "center",
-					paddingInlineEnd: "1.5rem",
-					height: "3rem",
+					paddingInline: "0.5rem",
+					paddingBlock: "0.25rem",
+					flex: "0 0 3rem",
 				}}
 			>
 				<IconButton onClick={onClose} color='primary' sx={{ paddingLeft: "0" }}>
 					<DoubleArrowIcon />
 				</IconButton>
-				<Typography variant='tableHeader'>Manage widgets</Typography>
+				<Button ref={menuAnchor} startIcon={<AddIcon />} onClick={() => setShowSizeMenu(true)}>
+					Add widget
+				</Button>
+				<Menu
+					open={showSizeMenu}
+					anchorEl={menuAnchor.current}
+					onClose={() => setShowSizeMenu(false)}
+					anchorOrigin={{
+						vertical: "top",
+						horizontal: "left",
+					}}
+					transformOrigin={{
+						vertical: "top",
+						horizontal: "left",
+					}}
+				>
+					<MenuItem onClick={() => selectWidgetSize({ w: 1, h: 1 })}>1x1</MenuItem>
+					<MenuItem onClick={() => selectWidgetSize({ w: 2, h: 2 })}>2x2</MenuItem>
+					<MenuItem onClick={() => selectWidgetSize({ w: 3, h: 3 })}>3x3</MenuItem>
+					<MenuItem onClick={() => selectWidgetSize({ w: 4, h: 4 })}>4x4</MenuItem>
+				</Menu>
 			</div>
-			<Divider />
-			<List>
-				{widgets.map((widget) => (
-					<ListItem
-						slotProps={{
-							root: { onMouseEnter: () => onItemHover(widget.i), onMouseLeave: () => onItemLeave(widget.i) },
-						}}
-						dense
-						key={widget.i}
-						secondaryAction={
-							<div
-								style={{ display: "inline-flex", gap: "0.25rem", alignItems: "center", justifyContent: "flex-start" }}
-							>
-								<IconButton color='primary' onClick={() => onDelete(widget.i)}>
-									<DeleteForever />
-								</IconButton>
-								<IconButton color='primary'>
-									<TextFormat />
-								</IconButton>
-							</div>
-						}
-					>
-						<ListItemButton>
-							<ListItemIcon>
-								<Switch
-									edge='start'
-									checked={widget.active}
-									color='primary'
-									onChange={(_, checked) => onEnable(widget.i, checked)}
-								/>
-							</ListItemIcon>
-							<ListItemText slotProps={{ primary: { sx: { fontSize: "1rem" } } }}>{widget.name}</ListItemText>
-						</ListItemButton>
-					</ListItem>
-				))}
-			</List>
+			<Divider sx={{ flex: "0 0 1px", borderWidth: "1px", borderColor: "hsla(248, 46%, 60%, 0.3)" }} />
+			<div style={{ flex: "1 1 auto", padding: "0.25rem" }}>
+				<List sx={{ padding: "0.25rem" }}>
+					{widgets.map((widget) => (
+						<ListItem
+							slotProps={{
+								root: { onMouseEnter: () => onItemHover(widget.i), onMouseLeave: () => onItemLeave(widget.i) },
+							}}
+							dense
+							key={widget.i}
+							secondaryAction={
+								<div
+									style={{ display: "inline-flex", gap: "0.25rem", alignItems: "center", justifyContent: "flex-start" }}
+								>
+									<IconButton color='primary' onClick={() => onDelete(widget.i)}>
+										<DeleteForever />
+									</IconButton>
+									<IconButton color='primary'>
+										<TextFormat />
+									</IconButton>
+								</div>
+							}
+						>
+							<ListItemButton>
+								<ListItemIcon>
+									<Switch
+										edge='start'
+										checked={widget.active}
+										color='primary'
+										onChange={(_, checked) => onEnable(widget.i, checked)}
+									/>
+								</ListItemIcon>
+								<ListItemText slotProps={{ primary: { sx: { fontSize: "1rem" } } }}>{widget.name}</ListItemText>
+							</ListItemButton>
+						</ListItem>
+					))}
+				</List>
+				<Typography
+					sx={{ paddingInline: "2.5rem", marginTop: "1rem" }}
+					fontWeight={500}
+					variant='baseXl'
+					color='primary'
+				>
+					{widgets.reduce((active, w) => active + Number(w.active), 0)} / {widgets.length}
+				</Typography>
+			</div>
+			<Divider sx={{ flex: "0 0 1px", borderWidth: "1px", borderColor: "hsla(248, 46%, 60%, 0.3)" }} />
+			<div
+				style={{
+					display: "inline-flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					paddingInline: "1.5rem",
+					paddingBlock: "0.25rem",
+					flex: "0 0 3rem",
+				}}
+			>
+				<div style={{ display: "inline-flex", gap: "0.5rem", alignItems: "center" }}>
+					<Button variant='outlined' onClick={onConfirm}>
+						Confirm
+					</Button>
+					<Button onClick={onReset}>Reset</Button>
+				</div>
+			</div>
+			<Divider sx={{ flex: "0 0 1px", borderWidth: "1px", borderColor: "hsla(248, 46%, 60%, 0.3)" }} />
 		</Drawer>
 	);
 };
