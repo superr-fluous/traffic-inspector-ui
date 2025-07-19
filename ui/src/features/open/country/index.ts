@@ -13,5 +13,7 @@ export default {
 };
 
 export interface Model {
+	self: "COUNTRY";
 	enum: CountryCode;
-};
+}
+

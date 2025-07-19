@@ -8,7 +8,7 @@ import type DNSModel from "./shards/dns/model";
 import TLSInfo from "./shards/tls/view";
 import type TLSModel from "./shards/tls/model";
 
-import type { Protocol } from './model';
+import type { Protocol } from "./model";
 
 export default {
 	view: {
@@ -20,13 +20,14 @@ export default {
 		chart: {
 			top: Top,
 			topl4: TopL4,
-		}
+		},
 	},
 };
 
 export interface Model {
-	dns: DNSModel,
-	tls: TLSModel,
-	enum: Protocol,
+	self: "PROTOCOL";
+	dns: DNSModel;
+	tls: TLSModel;
+	enum: Protocol;
 }
 

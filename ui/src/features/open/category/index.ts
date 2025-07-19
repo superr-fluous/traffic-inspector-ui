@@ -1,5 +1,5 @@
-import Top from './views/top';
-import Badge from './views/badge';
+import Top from "./views/top";
+import Badge from "./views/badge";
 
 import type { Category } from "./model";
 
@@ -8,10 +8,12 @@ export default {
 		badge: Badge,
 		chart: {
 			top: Top,
-		}
+		},
 	},
 };
 
 export interface Model {
-	enum: Category,
-};
+	self: "CATEGORY";
+	enum: Category;
+}
+
