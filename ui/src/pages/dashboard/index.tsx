@@ -35,7 +35,8 @@ const defaultWidgets: WidgetModel[] = [
 		h: 2,
 		name: "Total flows",
 		active: true,
-		children: <$features.closed.flow.view.total size='xl' />,
+		// children: <$features.closed.flow.view.total size='xl' />,
+		config: {},
 	},
 	{
 		i: nanoid(),
@@ -45,7 +46,8 @@ const defaultWidgets: WidgetModel[] = [
 		h: 2,
 		name: "Flows over time",
 		active: true,
-		children: <$features.closed.flow.view.chart.totalOverTime />,
+		// children: <$features.closed.flow.view.chart.totalOverTime />,
+		config: {},
 	},
 	{
 		i: nanoid(),
@@ -55,7 +57,8 @@ const defaultWidgets: WidgetModel[] = [
 		h: 2,
 		name: "Protocols",
 		active: true,
-		children: <$features.open.protocol.view.chart.top />,
+		// children: <$features.open.protocol.view.chart.top />,
+		config: {},
 	},
 	{
 		i: nanoid(),
@@ -65,7 +68,8 @@ const defaultWidgets: WidgetModel[] = [
 		h: 2,
 		name: "Countries",
 		active: true,
-		children: <$features.open.country.view.chart.top />,
+		// children: <$features.open.country.view.chart.top />,
+		config: {},
 	},
 	{
 		i: nanoid(),
@@ -75,7 +79,8 @@ const defaultWidgets: WidgetModel[] = [
 		h: 2,
 		name: "IP Addresses",
 		active: true,
-		children: <$features.open.ip.view.chart.top />,
+		// children: <$features.open.ip.view.chart.top />,
+		config: {},
 	},
 	{
 		i: nanoid(),
@@ -85,11 +90,14 @@ const defaultWidgets: WidgetModel[] = [
 		h: 2,
 		name: "Categories",
 		active: true,
-		children: <$features.open.category.view.chart.top />,
+		// children: <$features.open.category.view.chart.top />,
+		config: {},
 	},
 ];
 const Dashboard = () => {
-	const [widgets, setWidgets] = useState(defaultWidgets);
+	const [widgets, setWidgets] = useState<WidgetModel[]>([
+		{ i: "1", x: 0, y: 0, w: 2, h: 2, active: true, config: {}, name: "test" },
+	]);
 
 	return <$ui.dashboard widgets={widgets} onChange={() => {}} />;
 };

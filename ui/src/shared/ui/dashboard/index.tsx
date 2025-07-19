@@ -8,10 +8,11 @@ import Widget from "./ui/widget";
 import Toolbar from "./ui/toolbar";
 import ManagePanel from "./ui/manage-panel";
 
-import type { WidgetModel } from "./model";
+import type { WidgetConfig, WidgetModel } from "./model";
 
 import styles from "./styles.module.css";
 import { makeWidget } from "./helpers";
+import { Button } from "@mui/material";
 
 const Grid = WidthProvider(GridLayout);
 
@@ -29,7 +30,7 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 	const [showDelete, setShowDelete] = useState(false);
 	const [showEmptySlots, setShowEmptySlots] = useState(false);
 	const [showManagePanel, setShowManagePanel] = useState(false);
-	const [internalWidgets, setInternalWidgets] = useState<WidgetModel[]>(widgets); // this empty default state is crucial, since we need a rerender in order to extract widgets container for react portal
+	const [internalWidgets, setInternalWidgets] = useState<WidgetModel[]>(widgets);
 
 	const prevWidgetsSize = useRef<number>(internalWidgets.length);
 	const lastAddedWidgetId = useRef<WidgetModel["i"]>(null);
@@ -62,6 +63,12 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 	const confirmChanges = () => {
 		setShowManagePanel(false);
 		onChange(internalWidgets);
+	};
+
+	const applyWidgetConfig = (config: WidgetConfig, id: WidgetModel["i"]) => {
+		const widgets = internalWidgets.map((w) => (w.i === id ? { ...w, config } : w));
+		setInternalWidgets(widgets);
+		onChange(widgets);
 	};
 
 	useEffect(() => {
@@ -107,12 +114,18 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 					layout={displayWidgets}
 					margin={[12, 12]}
 					isBounded
+					isDraggable={false}
 					style={{
 						position: "relative",
 					}} /* actually 🤡 for making me specify that with react-grid-item already having a position: absolute */
 				>
 					{displayWidgets.map((widget) => (
-						<Widget key={widget.i} id={widget.i} widget={widget} />
+						<Widget
+							key={widget.i}
+							id={widget.i}
+							widget={widget}
+							onConfigure={(config) => applyWidgetConfig(config, widget.i)}
+						/>
 					))}
 				</Grid>
 			</$ui.scrollable>
