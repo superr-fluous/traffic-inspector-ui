@@ -3,13 +3,11 @@
 	height: 100%;
 	width: 100%;
 	padding-inline: 33%;
-	grid-template-columns: 7rem 7rem;
+	grid-template-columns: 1fr 1fr;
 	gap: 0.5rem;
 }
 
 .visual-select-option {
-	height: 7rem;
-	width: 7rem;
 	grid-column: span 1;
 
 	border: 2px solid hsla(248, 46%, 60%, 0.3);
@@ -33,5 +31,5 @@
 }
 
 .visual-select-option.selected {
-	background: hsla(248, 46%, 60%);
+	background: var(--accent-600);
 }

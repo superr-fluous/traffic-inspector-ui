@@ -12,10 +12,11 @@ import SensorsIcon from "@mui/icons-material/Sensors";
 import BarChartTwoToneIcon from "@mui/icons-material/BarChartTwoTone";
 import PieChartTwoToneIcon from "@mui/icons-material/PieChartTwoTone";
 import AreaChartTwoToneIcon from "@mui/icons-material/AreaChartTwoTone";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import KeyboardDoubleArrowLeft from "@mui/icons-material/KeyboardDoubleArrowLeft";
 import KeyboardDoubleArrowRight from "@mui/icons-material/KeyboardDoubleArrowRight";
 
-import { $helpers } from "@shared";
+import { $helpers, $ui } from "@shared";
 
 import { getDataInfoOptions, getDataVisualOptions } from "../../helpers";
 import type { WidgetConfig, WidgetModel } from "../../model";
@@ -35,11 +36,7 @@ const VisualSelect: FC<VisualSelectProps> = ({ dataInfo, value, onChange }) => {
 
 	return (
 		<>
-			<FormLabel>
-				<Typography fontSize='1.25rem'>Data visual</Typography>
-			</FormLabel>
-
-			<div className={styles["visual-select-grid"]}>
+			<$ui.ribbonLabel label='Visual' placement='bottom-right' className={styles["visual-select-grid"]}>
 				{dataVisualOptions.map((opt, index) => {
 					return (
 						<div
@@ -50,17 +47,25 @@ const VisualSelect: FC<VisualSelectProps> = ({ dataInfo, value, onChange }) => {
 							)}
 							onClick={() => onChange(opt)}
 						>
-							<div>
-								{opt === "sensor" && <SensorsIcon fontSize='large' color='primary' />}
-								{opt === "bar" && <BarChartTwoToneIcon fontSize='large' color='primary' />}
-								{opt === "pie" && <PieChartTwoToneIcon fontSize='large' color='primary' />}
-								{opt === "line" && <AreaChartTwoToneIcon fontSize='large' color='primary' />}
+							<div style={{ flex: "1 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+								{opt === "sensor" && <SensorsIcon fontSize='large' color={value === opt ? "inherit" : "primary"} />}
+								{opt === "bar" && (
+									<BarChartTwoToneIcon fontSize='large' color={value === opt ? "inherit" : "primary"} />
+								)}
+								{opt === "pie" && (
+									<PieChartTwoToneIcon fontSize='large' color={value === opt ? "inherit" : "primary"} />
+								)}
+								{opt === "line" && (
+									<AreaChartTwoToneIcon fontSize='large' color={value === opt ? "inherit" : "primary"} />
+								)}
 							</div>
-							<Typography variant='baseXl'>{opt.toUpperCase()}</Typography>
+							<Typography style={{ flex: "0 0 auto" }} variant='baseXl'>
+								{opt.toUpperCase()}
+							</Typography>
 						</div>
 					);
 				})}
-			</div>
+			</$ui.ribbonLabel>
 		</>
 	);
 };
@@ -76,25 +81,13 @@ const InfoSelect: FC<InfoSelectProps> = ({ dataSource, value, onChange }) => {
 
 	return (
 		<>
-			<div style={{ display: "flex", alignItems: "center", gap: "3rem" }}>
-				<FormLabel>
-					<Typography fontSize='1.25rem'>Data info:</Typography>
-				</FormLabel>
-				<Select value={value} onChange={(e) => onChange(e.target.value as typeof value)}>
+			<$ui.ribbonLabel label='Data info' placement='bottom-right' style={{ width: "35%" }}>
+				<Select value={value} onChange={(e) => onChange(e.target.value as typeof value)} size='small' fullWidth>
 					{dataInfoOptions.map((o) => (
 						<MenuItem value={o}>{o}</MenuItem>
 					))}
 				</Select>
-			</div>
-			<Typography variant='subtitle1'>
-				{value === "ASN" && <>ASN</>}
-				{value === "CATEGORY" && <>CATEGORY</>}
-				{value === "COUNTRY" && <>COUNTRY</>}
-				{value === "IP" && <>IP</>}
-				{value === "OS" && <>OS</>}
-				{value === "PROTOCOL" && <>PROTOCOL</>}
-				{value === "TOTAL" && <>TOTAL</>}
-			</Typography>
+			</$ui.ribbonLabel>
 		</>
 	);
 };
@@ -107,38 +100,39 @@ interface SourceSelectProps {
 const SourceSelect: FC<SourceSelectProps> = ({ value, onChange }) => {
 	return (
 		<>
-			<div style={{ display: "flex", alignItems: "center", gap: "3rem" }}>
-				<FormLabel>
-					<Typography fontSize='1.25rem'>Data source:</Typography>
-				</FormLabel>
+			<$ui.ribbonLabel label='Data source' placement='bottom-right' style={{ width: "35%" }}>
 				<ToggleButtonGroup
 					onChange={(_, val: WidgetConfig["dataSource"]) => onChange(val)}
 					defaultValue='flows'
 					value={value}
+					size='small'
+					fullWidth
 				>
 					<ToggleButton color='primary' value='flows' defaultChecked>
 						Flows
 					</ToggleButton>
-					<ToggleButton color='primary' value='system'>
+					<ToggleButton color='primary' value='system' disabled>
 						System
 					</ToggleButton>
 				</ToggleButtonGroup>
-			</div>
-			<Typography variant='subtitle1'>
-				{value === "flows" && <>Use flow data to power your charts</>}
-				{value === "system" && <>Use system info to power your charts</>}
-			</Typography>
+			</$ui.ribbonLabel>
 		</>
 	);
 };
 
 interface StepperProps {
+	/**
+	 * avoid zero
+	 */
 	step: number;
+	total: number;
 	onBack: VoidFunction;
+	onFinish: VoidFunction;
 	onForward: VoidFunction;
 }
 
-const Stepper: FC<StepperProps> = ({ step, onBack, onForward }) => {
+const Stepper: FC<StepperProps> = ({ step, total, onBack, onFinish, onForward }) => {
+	console.log(step);
 	return (
 		<div style={{ width: "75%", flex: "0 0 auto", display: "flex", gap: "1rem", alignItems: "center" }}>
 			<Button
@@ -146,17 +140,22 @@ const Stepper: FC<StepperProps> = ({ step, onBack, onForward }) => {
 				startIcon={<KeyboardDoubleArrowLeft />}
 				size='small'
 				onClick={onBack}
-				disabled={step === 0}
+				disabled={step === 1}
+				style={{ visibility: step === 1 ? "hidden" : undefined }}
 			>
 				Back
 			</Button>
-			<LinearProgress sx={{ flex: "1 0 auto" }} variant='determinate' value={step === 0 ? 0 : (100 / 3) * step} />
 
-			{step !== 2 && (
-				<Button sx={{ flex: "0 0 auto" }} startIcon={<KeyboardDoubleArrowRight />} size='small' onClick={onForward}>
-					Next
-				</Button>
-			)}
+			<LinearProgress sx={{ flex: "75%" }} variant='determinate' value={(100 / total) * (step - 1)} />
+
+			<Button
+				sx={{ flex: "0 0 auto" }}
+				startIcon={step === total ? <CheckCircleOutlineIcon /> : <KeyboardDoubleArrowRight />}
+				size='small'
+				onClick={step === total ? onFinish : onForward}
+			>
+				{step === total ? "Finish" : "Next"}
+			</Button>
 		</div>
 	);
 };
@@ -166,13 +165,14 @@ const Form: FC<ComponentProps<"div">> = (props) => (
 		{...props}
 		style={{
 			...props.style,
+			paddingBlock: "0.75rem",
 			flex: "1 1 auto",
 			width: "100%",
 			display: "flex",
 			flexDirection: "column",
 			alignItems: "center",
 			justifyContent: "center",
-			gap: "1.5rem",
+			gap: "0.75rem",
 		}}
 	/>
 );

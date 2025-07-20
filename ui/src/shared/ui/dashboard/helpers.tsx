@@ -2,7 +2,7 @@ import { nanoid } from "nanoid";
 import type { ComponentType, FunctionComponent } from "react";
 
 import WidgetWizard from "./ui/widget-wizard";
-import type { WidgetConfig, WidgetModel } from "./model";
+import type { GenericWidgetViewProps, WidgetConfig, WidgetModel } from "./model";
 
 import { $features } from "@features";
 import type { Defined } from "@shared/helpers/types";
@@ -54,11 +54,14 @@ const widgetVisualMapper = {
 		sensor: $features.closed.flow.view.total,
 		line: $features.closed.flow.view.chart.totalOverTime,
 	},
-} as Record<Defined<WidgetConfig["dataInfo"]>, Partial<Record<Defined<WidgetConfig["dataVisual"]>, ComponentType>>>;
+} as Record<
+	Defined<WidgetConfig["dataInfo"]>,
+	Partial<Record<Defined<WidgetConfig["dataVisual"]>, ComponentType<GenericWidgetViewProps>>>
+>;
 
 export const getWidgetVisual = (config: WidgetConfig) => {
 	if (config.dataInfo === undefined || config.dataVisual === undefined) {
-		return WidgetWizard;
+		return null;
 	}
 
 	return widgetVisualMapper[config.dataInfo][config.dataVisual];
@@ -83,8 +86,8 @@ export const getDataVisualOptions = (
 	}
 
 	if (dataInfo === "TOTAL") {
-		return ["sensor", "line"];
+		return ["line", "sensor"];
 	}
 
-	return ["bar", "pie", "line"];
+	return ["line", "pie", "bar"];
 };

@@ -1,0 +1,37 @@
+.ribbon-label-wrapper {
+	border-radius: 8px;
+	border: 1px solid var(--accent-300);
+	padding: 0.75rem 2rem;
+
+	position: relative;
+	background: inherit;
+	background-color: inherit;
+}
+
+.ribbon-label-label {
+	position: absolute;
+
+	background: inherit;
+	background-color: inherit;
+	padding-inline: 0.5rem;
+}
+
+.ribbon-label-label-top-left {
+	top: -0.75rem;
+	left: 0.5rem;
+}
+
+.ribbon-label-label-top-right {
+	top: -0.75rem;
+	right: 0.5rem;
+}
+
+.ribbon-label-label-bottom-left {
+	bottom: -0.5rem;
+	left: 0.5rem;
+}
+
+.ribbon-label-label-bottom-right {
+	bottom: -0.5rem;
+	right: 0.5rem;
+}

@@ -16,6 +16,7 @@ await esbuild.build({
 	jsxDev: false,
 	target: ["chrome120", "firefox130"],
 	treeShaking: true,
+	sourcemap: true,
 	plugins: [
 		copy([
 			{ from: "assets", to: "build/assets" },

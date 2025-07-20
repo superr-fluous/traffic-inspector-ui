@@ -25,3 +25,7 @@ export type WidgetConfig = Partial<
 			dataVisual: Extract<WidgetVisual, "line" | "sensor">;
 	  }
 >;
+
+export interface GenericWidgetViewProps {
+	config: WidgetConfig;
+}
