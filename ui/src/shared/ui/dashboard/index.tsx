@@ -10,9 +10,9 @@ import ManagePanel from "./ui/manage-panel";
 
 import type { WidgetConfig, WidgetModel } from "./model";
 
-import styles from "./styles.module.css";
 import { makeWidget } from "./helpers";
-import { Button } from "@mui/material";
+
+import styles from "./styles.module.css";
 
 const Grid = WidthProvider(GridLayout);
 
