@@ -6,12 +6,13 @@ import type { WidgetConfig, WidgetModel } from "../../model";
 import Components from "./components";
 import { getDataVisualOptions } from "../../helpers";
 
+import styles from "./styles.module.css";
+
 interface Props {
 	widget: WidgetModel;
 	onConfirmConfiguration: (config: WidgetConfig) => void;
 }
 
-// TODO: 1x1 widget currently can't fit the wizard
 const WidgetWizard: FC<Props> = ({ widget, onConfirmConfiguration }) => {
 	const [activeStep, setActiveStep] = useState(1);
 	const [dataSource, setDataSource] = useState<WidgetConfig["dataSource"]>(widget.config.dataSource ?? "flows");
@@ -39,18 +40,7 @@ const WidgetWizard: FC<Props> = ({ widget, onConfirmConfiguration }) => {
 	};
 
 	return (
-		<div
-			style={{
-				width: "100%",
-				height: "100%",
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				gap: "1rem",
-				background: "inherit",
-				backgroundColor: "inherit",
-			}}
-		>
+		<div className={styles["wizard-container"]} style={{ background: "inherit", backgroundColor: "inherit" }}>
 			<Components.Form style={{ background: "inherit", backgroundColor: "inherit" }}>
 				{activeStep === 1 && (
 					<>

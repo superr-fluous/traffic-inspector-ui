@@ -71,6 +71,12 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 		onChange(widgets);
 	};
 
+	const chnageWidgetName = (id: WidgetModel["i"], name: WidgetModel["name"]) => {
+		const widgets = internalWidgets.map((w) => (w.i === id ? { ...w, name } : w));
+		setInternalWidgets(widgets);
+		onChange(widgets);
+	};
+
 	useEffect(() => {
 		if (internalWidgets.length === prevWidgetsSize.current + 1 && lastAddedWidgetId.current !== null) {
 			// widget added
@@ -97,6 +103,7 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 				onDelete={deleteWidget}
 				onEnable={enableWidget}
 				onReset={() => setInternalWidgets(widgets)}
+				onChangeWidgetName={chnageWidgetName}
 			/>
 			<Toolbar
 				addMode={showEmptySlots}

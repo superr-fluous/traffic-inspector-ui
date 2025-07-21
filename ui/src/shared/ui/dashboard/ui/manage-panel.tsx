@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { FC } from "react";
 
 import Menu from "@mui/material/Menu";
@@ -9,6 +9,7 @@ import Drawer from "@mui/material/Drawer";
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import ListItem from "@mui/material/ListItem";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -19,6 +20,7 @@ import AddIcon from "@mui/icons-material/Add";
 import TextFormat from "@mui/icons-material/TextFormat";
 import DeleteForever from "@mui/icons-material/DeleteForever";
 import DoubleArrowIcon from "@mui/icons-material/DoubleArrow";
+import DoneOutlineIcon from "@mui/icons-material/DoneOutline";
 
 import type { WidgetModel } from "../model";
 
@@ -31,10 +33,22 @@ interface Props {
 	onAdd: (size: { w: number; h: number }) => void;
 	onDelete: (id: WidgetModel["i"]) => void;
 	onEnable: (id: WidgetModel["i"], enabled: WidgetModel["active"]) => void;
+	onChangeWidgetName: (id: WidgetModel["i"], name: WidgetModel["name"]) => void;
 }
 
-const ManagePanel: FC<Props> = ({ open, widgets, onEnable, onAdd, onDelete, onClose, onConfirm, onReset }) => {
+const ManagePanel: FC<Props> = ({
+	open,
+	widgets,
+	onEnable,
+	onAdd,
+	onClose,
+	onConfirm,
+	onDelete,
+	onChangeWidgetName,
+	onReset,
+}) => {
 	const [showSizeMenu, setShowSizeMenu] = useState(false);
+	const [editWidgetName, setEditWidgetName] = useState<WidgetModel["i"] | null>(null);
 
 	const menuAnchor = useRef<HTMLButtonElement>(null);
 	const highlightTimeout = useRef<NodeJS.Timeout>(null);
@@ -65,10 +79,29 @@ const ManagePanel: FC<Props> = ({ open, widgets, onEnable, onAdd, onDelete, onCl
 		}
 	};
 
+	const changeWidgetName = (id: WidgetModel["i"]) => {
+		setEditWidgetName(id);
+	};
+
+	const confirmWidgetName = () => {
+		const name = (document.getElementById(`name-textfield-${editWidgetName}`) as HTMLInputElement).value;
+		onChangeWidgetName(editWidgetName!, name);
+		setEditWidgetName(null);
+	};
+
 	const selectWidgetSize = (size: { w: number; h: number }) => {
 		setShowSizeMenu(false);
 		onAdd(size);
 	};
+
+	useEffect(
+		() => () => {
+			if (open) {
+				setEditWidgetName(null);
+			}
+		},
+		[open]
+	);
 
 	return (
 		<Drawer
@@ -136,19 +169,27 @@ const ManagePanel: FC<Props> = ({ open, widgets, onEnable, onAdd, onDelete, onCl
 					{widgets.map((widget) => (
 						<ListItem
 							slotProps={{
+								// click instead of enter/leave?
 								root: { onMouseEnter: () => onItemHover(widget.i), onMouseLeave: () => onItemLeave(widget.i) },
 							}}
+							sx={{ height: "56px" }}
 							dense
 							key={widget.i}
 							secondaryAction={
 								<div
 									style={{ display: "inline-flex", gap: "0.25rem", alignItems: "center", justifyContent: "flex-start" }}
 								>
-									<IconButton color='primary' onClick={() => onDelete(widget.i)}>
+									{editWidgetName === widget.i ? (
+										<IconButton color='primary' onClick={confirmWidgetName}>
+											<DoneOutlineIcon />
+										</IconButton>
+									) : (
+										<IconButton color='primary' onClick={() => changeWidgetName(widget.i)}>
+											<TextFormat />
+										</IconButton>
+									)}
+									<IconButton color='error' onClick={() => onDelete(widget.i)}>
 										<DeleteForever />
-									</IconButton>
-									<IconButton color='primary'>
-										<TextFormat />
 									</IconButton>
 								</div>
 							}
@@ -162,7 +203,20 @@ const ManagePanel: FC<Props> = ({ open, widgets, onEnable, onAdd, onDelete, onCl
 										onChange={(_, checked) => onEnable(widget.i, checked)}
 									/>
 								</ListItemIcon>
-								<ListItemText slotProps={{ primary: { sx: { fontSize: "1rem" } } }}>{widget.name}</ListItemText>
+								<ListItemText
+									slotProps={{ primary: { sx: { fontSize: "1rem", height: "40px", alignContent: "center" } } }}
+								>
+									{widget.i === editWidgetName ? (
+										<TextField
+											id={`name-textfield-${editWidgetName}`}
+											size='small'
+											defaultValue={widget.name}
+											autoFocus
+										/>
+									) : (
+										widget.name
+									)}
+								</ListItemText>
 							</ListItemButton>
 						</ListItem>
 					))}
