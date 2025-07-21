@@ -1,8 +1,11 @@
-import React, { CSSProperties, PropsWithChildren } from "react";
+import React from "react";
+import type { CSSProperties, PropsWithChildren } from "react";
+
+import { Typography } from "@mui/material";
+
+import { $helpers } from "@shared";
 
 import styles from "./styles.module.css";
-import { $helpers } from "@shared";
-import { Typography } from "@mui/material";
 
 interface Props extends PropsWithChildren {
 	label: string | number | null;
@@ -16,7 +19,7 @@ interface Props extends PropsWithChildren {
  */
 export default function RibbonLabel({ label, placement = "top-left", className, style, children }: Props) {
 	return (
-		<div className={$helpers.clsx(styles["ribbon-label-wrapper"], className)} style={style}>
+		<div className={$helpers.clsx(className, styles["ribbon-label-wrapper"])} style={style}>
 			<Typography
 				variant='base'
 				className={$helpers.clsx(styles["ribbon-label-label"], styles[`ribbon-label-label-${placement}`])}

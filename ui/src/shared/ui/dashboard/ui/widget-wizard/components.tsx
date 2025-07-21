@@ -2,10 +2,11 @@ import React from "react";
 import type { ComponentProps, FC } from "react";
 
 import Select from "@mui/material/Select";
+import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
-import FormLabel from "@mui/material/FormLabel";
 import Typography from "@mui/material/Typography";
 import ToggleButton from "@mui/material/ToggleButton";
+import LinearProgress from "@mui/material/LinearProgress";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 
 import SensorsIcon from "@mui/icons-material/Sensors";
@@ -19,11 +20,9 @@ import KeyboardDoubleArrowRight from "@mui/icons-material/KeyboardDoubleArrowRig
 import { $helpers, $ui } from "@shared";
 
 import { getDataInfoOptions, getDataVisualOptions } from "../../helpers";
-import type { WidgetConfig, WidgetModel } from "../../model";
+import type { WidgetConfig } from "../../model";
 
 import styles from "./styles.module.css";
-import Button from "@mui/material/Button";
-import LinearProgress from "@mui/material/LinearProgress";
 
 interface VisualSelectProps {
 	value: WidgetConfig["dataVisual"];
@@ -81,7 +80,7 @@ const InfoSelect: FC<InfoSelectProps> = ({ dataSource, value, onChange }) => {
 
 	return (
 		<>
-			<$ui.ribbonLabel label='Data info' placement='bottom-right' style={{ width: "35%" }}>
+			<$ui.ribbonLabel label='Data info' placement='bottom-right' className={styles["wizard-ribbon"]}>
 				<Select value={value} onChange={(e) => onChange(e.target.value as typeof value)} size='small' fullWidth>
 					{dataInfoOptions.map((o) => (
 						<MenuItem value={o}>{o}</MenuItem>
@@ -100,7 +99,7 @@ interface SourceSelectProps {
 const SourceSelect: FC<SourceSelectProps> = ({ value, onChange }) => {
 	return (
 		<>
-			<$ui.ribbonLabel label='Data source' placement='bottom-right' style={{ width: "35%" }}>
+			<$ui.ribbonLabel label='Data source' placement='bottom-right' className={styles["wizard-ribbon"]}>
 				<ToggleButtonGroup
 					onChange={(_, val: WidgetConfig["dataSource"]) => onChange(val)}
 					defaultValue='flows'
@@ -132,7 +131,6 @@ interface StepperProps {
 }
 
 const Stepper: FC<StepperProps> = ({ step, total, onBack, onFinish, onForward }) => {
-	console.log(step);
 	return (
 		<div style={{ width: "75%", flex: "0 0 auto", display: "flex", gap: "1rem", alignItems: "center" }}>
 			<Button
@@ -160,22 +158,7 @@ const Stepper: FC<StepperProps> = ({ step, total, onBack, onFinish, onForward })
 	);
 };
 
-const Form: FC<ComponentProps<"div">> = (props) => (
-	<div
-		{...props}
-		style={{
-			...props.style,
-			paddingBlock: "0.75rem",
-			flex: "1 1 auto",
-			width: "100%",
-			display: "flex",
-			flexDirection: "column",
-			alignItems: "center",
-			justifyContent: "center",
-			gap: "0.75rem",
-		}}
-	/>
-);
+const Form: FC<ComponentProps<"div">> = (props) => <div {...props} className={styles["wizard-form"]} />;
 
 interface SummaryProps {
 	values: {

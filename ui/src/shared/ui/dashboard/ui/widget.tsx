@@ -37,7 +37,6 @@ const Widget: FC<Props> = ({ widget, className, onConfigure, ...props }) => {
 	}, [widget]);
 
 	useEffect(() => {
-		console.log("visual effect");
 		const visual = getWidgetVisual(widget.config);
 
 		if (visual === null || visual === undefined) {

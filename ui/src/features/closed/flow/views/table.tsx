@@ -38,7 +38,6 @@ const Table = () => {
 	const doFetch = async (signal: AbortSignal) => {
 		setIsLoading(true);
 		const res = await getList(currentPage, 20, signal);
-		console.log(res);
 		setIsLoading(false);
 
 		if (res.ok) {

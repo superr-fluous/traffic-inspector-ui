@@ -1,10 +1,29 @@
-.visual-select-grid {
-	display: grid;
-	height: 100%;
+.wizard-container {
+	container-type: size;
+	container-name: wizard;
+
 	width: 100%;
-	padding-inline: 33%;
-	grid-template-columns: 1fr 1fr;
-	gap: 0.5rem;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1rem;
+}
+
+.wizard-form {
+	padding-block: 0.75rem;
+	flex: 1 1 auto;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+}
+
+.wizard-ribbon {
+	padding: 0.75rem 2rem; /* repeats ribbon-label origin padding */
+	width: 35%;
 }
 
 .visual-select-option {
@@ -32,4 +51,34 @@
 
 .visual-select-option.selected {
 	background: var(--accent-600);
+}
+
+.visual-select-grid {
+	display: grid;
+	height: 100%;
+	width: 100%;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.5rem;
+}
+
+@container wizard (height < 192px) {
+	.wizard-form {
+		flex-direction: row;
+		height: 82px;
+	}
+
+	.wizard-ribbon {
+		padding: 0.5rem 1rem;
+		width: 45%;
+	}
+
+	.visual-select-grid {
+		grid-auto-flow: column;
+		border: none;
+		padding-block: 0 0.5rem;
+	}
+
+	.visual-select-option {
+		padding: 0 0.25rem;
+	}
 }

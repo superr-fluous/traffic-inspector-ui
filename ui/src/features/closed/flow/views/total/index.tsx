@@ -30,8 +30,6 @@ const Total: FC<Props> = (props) => {
 		defaultValue: null,
 	});
 
-	console.log(data);
-
 	return (
 		<div
 			{...props}
