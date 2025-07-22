@@ -1,15 +1,15 @@
 import React from "react";
-import type { FC, MouseEventHandler, PropsWithChildren } from "react";
+import type { MouseEventHandler } from "react";
 
-import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 
 import { COLORS } from "@layout/theme";
 
 import styles from "./styles.module.css";
 import { useLocation } from "wouter";
 
-const Navbar: FC<PropsWithChildren> = ({ children }) => {
+const Navbar = () => {
 	const [location, navigate] = useLocation();
 
 	const handleNavigate =

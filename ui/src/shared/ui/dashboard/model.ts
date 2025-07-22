@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import type { Layout } from "react-grid-layout";
 
 import type { FeaturesList } from "@features";

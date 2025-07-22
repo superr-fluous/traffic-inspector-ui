@@ -1,0 +1,14 @@
+name: 'CodeQL config for frontend'
+tools: stable
+languages: javascript
+paths:
+  - ui/assets
+  - ui/build-scripts
+  - ui/build-templates
+  - ui/src
+  - ui/static
+paths-ignore:
+  - '**/node_modules'
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
