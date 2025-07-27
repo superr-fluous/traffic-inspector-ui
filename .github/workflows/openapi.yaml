@@ -1,16 +1,16 @@
-name: Check frontend sources
+name: Check OpenAPI spec
 on:
   push:
     paths:
-      - 'ui/**'
-      - '.github/workflows/ui.yaml'
+      - 'api/schema/**'
+      - '.github/workflows/openapi.yaml'
     branches:
       - main
 
   pull_request:
     paths:
-      - 'ui/**'
-      - '.github/workflows/ui.yaml'
+      - 'api/schema/**'
+      - '.github/workflows/openapi.yaml'
     branches:
       - main
     types: [opened, synchronize, reopened]
@@ -19,13 +19,9 @@ on:
     types: [created]
 
 jobs:
-  run-ui-submit:
-    name: Build project (with sast)
+  docs:
+    name: Lint, build and attach docs 
     runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        working-directory: ui
 
     permissions:
       contents: read
@@ -47,19 +43,20 @@ jobs:
 
       - name: Install deps
         run: npm ci
+        working-directory: ui
 
-      - name: CodeQL init
-        uses: github/codeql-action/init@v3
+      - name: lint docs
+        id: lint_docs
+        run: npm run test:api-docs
+        working-directory: ui
+
+      - name: build docs
+        id: build_docs
+        run: npm run build:api-docs
+        working-directory: ui
+
+      - name: Upload static open api html
+        uses: actions/upload-artifact@v4
         with:
-          config-file: .github/codeql/frontend-config.yaml
-
-      - name: CodeQL analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: '/language:javascript'
-
-      - name: Run submit script
-        id: run_submit
-        run: |
-          echo "Running npm run submit..."
-          npm run submit
+          name: openapi.html
+          path: api/schema/openapi.html
