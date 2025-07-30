@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { nanoid } from "nanoid";
 import type { Layout } from "react-grid-layout";
 
 import { $ui } from "@shared";
-import { $features } from "@features";
 
 // FIXME: import is not code-style compliant...
 import type { PulledWidgetModel } from "../../shared/ui/dashboard/model";
