@@ -4,6 +4,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"help": "npm run",
+		"dev": "npm run build:dev",
+		"build": "npm run build:prod",
 		"build:dev": "node build-scripts/dev.js",
 		"build:prod": "node build-scripts/build.js",
 		"build:api-docs": "npx redocly build-docs ../api/schema/openapi.yaml --output ../api/schema/openapi.html --config ./redocly.yaml --disableGoogleFont --title \"TrafficInspector OpenAPI Spec\"",
@@ -23,9 +26,11 @@
 		"@nivo/core": "0.93.0",
 		"@nivo/line": "0.93.0",
 		"@nivo/pie": "0.93.0",
+		"jotai": "2.12.5",
 		"ky": "1.8.1",
 		"react": "19.1.0",
 		"react-dom": "19.1.0",
+		"react-toastify": "11.0.5",
 		"reactflow": "11.11.4",
 		"wouter": "3.7.0"
 	},
