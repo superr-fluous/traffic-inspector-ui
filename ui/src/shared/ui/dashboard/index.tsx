@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import GridLayout, { WidthProvider } from "react-grid-layout";
-import type { FC } from "react";
+import type { Layout } from "react-grid-layout";
 
 import { $ui, $helpers } from "@shared";
 
@@ -8,17 +8,20 @@ import Widget from "./ui/widget";
 import Toolbar from "./ui/toolbar";
 import ManagePanel from "./ui/manage-panel";
 
-import type { WidgetConfig, WidgetModel } from "./model";
+import { makeLayout } from "./helpers";
 
-import { makeWidget } from "./helpers";
+import type { ManagePanelProps } from "./ui/manage-panel";
+import type { PulledWidgetModel, WidgetConfig, WidgetModel } from "./model";
 
 import styles from "./styles.module.css";
 
 const Grid = WidthProvider(GridLayout);
 
-interface Props {
-	widgets: WidgetModel[];
+interface Props<T extends "origin" | "bucket"> {
+	layout: Layout[];
+	widgets: Array<T extends "origin" ? WidgetModel : PulledWidgetModel>;
 	onChange: (widgets: WidgetModel[]) => void;
+	mode: T;
 }
 
 /*
@@ -26,13 +29,15 @@ interface Props {
  gridstackjs is poorly adjustable for react, having to balance both GridStack internal state and translate it to React's state is too finicky
  kinda preffered DIY version, maybe should move to it eventually if no-drag'n'drop is okay 
 */
-const Dashboard: FC<Props> = ({ widgets, onChange }) => {
+const Dashboard = <T extends "origin" | "bucket">({ layout, widgets, mode, onChange }: Props<T>) => {
 	const [showDelete, setShowDelete] = useState(false);
 	const [showEmptySlots, setShowEmptySlots] = useState(false);
 	const [showManagePanel, setShowManagePanel] = useState(false);
-	const [internalWidgets, setInternalWidgets] = useState<WidgetModel[]>(widgets);
 
-	const prevWidgetsSize = useRef<number>(internalWidgets.length);
+	const [localWidgets, setLocalWidgets] = useState<typeof widgets>(widgets);
+	const [localLayout, setLocalLayout] = useState<Layout[]>(layout);
+
+	const prevWidgetsSize = useRef<number>(localWidgets.length);
 	const lastAddedWidgetId = useRef<WidgetModel["i"]>(null);
 
 	const cancelToolbarAction = () => {
@@ -41,18 +46,22 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 	};
 
 	const enableWidget = (id: WidgetModel["i"], enabled: WidgetModel["active"]) => {
-		setInternalWidgets((current) => current.map((w) => (w.i === id ? { ...w, active: enabled } : w)));
+		setLocalWidgets((current) => current.map((w) => (w.i === id ? { ...w, active: enabled } : w)));
 	};
 
 	const deleteWidget = (id: WidgetModel["i"]) => {
-		setInternalWidgets((current) => current.filter((w) => w.i !== id));
+		setLocalWidgets((current) => current.filter((w) => w.i !== id));
 	};
 
 	const addWidget = (size: { w: number; h: number }, signalChange = false) => {
-		const widget = makeWidget(size);
-		const widgets = [...internalWidgets, widget];
+		const widgetLayout = makeLayout(size);
+		const widget = { i: widgetLayout.i, config: {}, active: true, bookmarked: false };
 
-		setInternalWidgets(widgets);
+		const widgets = [...localWidgets, widget] as typeof localWidgets;
+
+		setLocalWidgets(widgets);
+		setLocalLayout([...localLayout, widgetLayout]);
+
 		lastAddedWidgetId.current = widget.i;
 
 		if (signalChange) {
@@ -62,23 +71,33 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 
 	const confirmChanges = () => {
 		setShowManagePanel(false);
-		onChange(internalWidgets);
+		onChange(localWidgets);
 	};
 
 	const applyWidgetConfig = (config: WidgetConfig, id: WidgetModel["i"]) => {
-		const widgets = internalWidgets.map((w) => (w.i === id ? { ...w, config } : w));
-		setInternalWidgets(widgets);
+		const widgets = localWidgets.map((w) => (w.i === id ? { ...w, config } : w));
+		setLocalWidgets(widgets);
 		onChange(widgets);
 	};
 
 	const chnageWidgetName = (id: WidgetModel["i"], name: WidgetModel["name"]) => {
-		const widgets = internalWidgets.map((w) => (w.i === id ? { ...w, name } : w));
-		setInternalWidgets(widgets);
+		const widgets = localWidgets.map((w) => (w.i === id ? { ...w, name } : w));
+		setLocalWidgets(widgets);
+		onChange(widgets);
+	};
+
+	const toggleBookmark = (id: WidgetModel["i"], bookmarked: WidgetModel["bookmarked"]) => {
+		const widgets = localWidgets.map((w) => (w.i === id ? { ...w, bookmarked } : w));
+		setLocalWidgets(widgets);
 		onChange(widgets);
 	};
 
 	useEffect(() => {
-		if (internalWidgets.length === prevWidgetsSize.current + 1 && lastAddedWidgetId.current !== null) {
+		setLocalLayout(layout);
+	}, [layout]);
+
+	useEffect(() => {
+		if (localWidgets.length === prevWidgetsSize.current + 1 && lastAddedWidgetId.current !== null) {
 			// widget added
 			document
 				.getElementById(lastAddedWidgetId.current)
@@ -86,27 +105,33 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 		}
 
 		return () => {
-			prevWidgetsSize.current = internalWidgets.length;
+			prevWidgetsSize.current = localWidgets.length;
 		};
-	}, [internalWidgets]);
+	}, [localWidgets]);
 
-	const displayWidgets = useMemo(() => internalWidgets.filter((widget) => widget.active), [internalWidgets]);
+	const displayWidgets = useMemo(() => localWidgets.filter((widget) => widget.active), [localWidgets]);
+
+	const inactiveWidgetsL = widgets.length - displayWidgets.length;
 
 	return (
 		<div className={styles.wrapper}>
 			<ManagePanel
 				open={showManagePanel}
-				widgets={internalWidgets}
+				widgets={localWidgets as ManagePanelProps<typeof mode>["widgets"]}
+				mode={mode}
 				onAdd={addWidget}
 				onClose={() => setShowManagePanel(false)}
 				onConfirm={confirmChanges}
 				onDelete={deleteWidget}
 				onEnable={enableWidget}
-				onReset={() => setInternalWidgets(widgets)}
+				onReset={() => setLocalWidgets(widgets)}
 				onChangeWidgetName={chnageWidgetName}
+				onToggleBookmark={toggleBookmark}
 			/>
 			<Toolbar
 				addMode={showEmptySlots}
+				unassignedWidgetsNum={inactiveWidgetsL}
+				mode={mode}
 				onCancel={cancelToolbarAction}
 				onManageWidgets={() => setShowManagePanel(true)}
 				onSelectWidgetSize={addWidget}
@@ -118,7 +143,7 @@ const Dashboard: FC<Props> = ({ widgets, onChange }) => {
 				<Grid
 					cols={4}
 					rowHeight={192}
-					layout={displayWidgets}
+					layout={localLayout}
 					margin={[12, 12]}
 					isBounded
 					isDraggable={false}

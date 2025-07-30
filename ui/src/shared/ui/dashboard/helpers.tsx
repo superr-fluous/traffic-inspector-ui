@@ -1,22 +1,19 @@
 import { nanoid } from "nanoid";
-import type { ComponentType, FunctionComponent } from "react";
-
-import WidgetWizard from "./ui/widget-wizard";
-import type { GenericWidgetViewProps, WidgetConfig, WidgetModel } from "./model";
+import type { ComponentType } from "react";
+import type { Layout } from "react-grid-layout";
 
 import { $features } from "@features";
 import type { Defined } from "@shared/helpers/types";
 
+import type { GenericWidgetViewProps, WidgetConfig } from "./model";
+
 // TODO: refactor -> should be default export with all helpers and then: import _helpers from "*/**"
 
-export const makeWidget = (size: { w: number; h: number }): WidgetModel => ({
+export const makeLayout = (size: { w: number; h: number }): Layout => ({
 	...size,
 	x: Infinity,
 	y: Infinity,
 	i: nanoid(),
-	name: "New widget",
-	active: true,
-	config: {},
 });
 
 const widgetVisualMapper = {

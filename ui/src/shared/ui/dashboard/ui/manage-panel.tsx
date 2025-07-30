@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { FC } from "react";
 
 import Menu from "@mui/material/Menu";
 import List from "@mui/material/List";
@@ -13,20 +12,22 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemButton from "@mui/material/ListItemButton";
 
 import AddIcon from "@mui/icons-material/Add";
 import TextFormat from "@mui/icons-material/TextFormat";
 import DeleteForever from "@mui/icons-material/DeleteForever";
 import DoubleArrowIcon from "@mui/icons-material/DoubleArrow";
 import DoneOutlineIcon from "@mui/icons-material/DoneOutline";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import LocationSearchingIcon from "@mui/icons-material/LocationSearching";
 
-import type { WidgetModel } from "../model";
+import type { PulledWidgetModel, WidgetModel } from "../model";
 
-interface Props {
+export interface ManagePanelProps<T extends "bucket" | "origin"> {
 	open: boolean;
-	widgets: WidgetModel[];
+	mode: T;
+	widgets: Array<T extends "bucket" ? PulledWidgetModel : WidgetModel>;
 	onReset: VoidFunction;
 	onClose: VoidFunction;
 	onConfirm: VoidFunction;
@@ -34,10 +35,12 @@ interface Props {
 	onDelete: (id: WidgetModel["i"]) => void;
 	onEnable: (id: WidgetModel["i"], enabled: WidgetModel["active"]) => void;
 	onChangeWidgetName: (id: WidgetModel["i"], name: WidgetModel["name"]) => void;
+	onToggleBookmark: (id: WidgetModel["i"], bookmarked: WidgetModel["bookmarked"]) => void;
 }
 
-const ManagePanel: FC<Props> = ({
+const ManagePanel = <T extends "bucket" | "origin">({
 	open,
+	mode,
 	widgets,
 	onEnable,
 	onAdd,
@@ -46,37 +49,36 @@ const ManagePanel: FC<Props> = ({
 	onDelete,
 	onChangeWidgetName,
 	onReset,
-}) => {
+	onToggleBookmark,
+}: ManagePanelProps<T>) => {
 	const [showSizeMenu, setShowSizeMenu] = useState(false);
 	const [editWidgetName, setEditWidgetName] = useState<WidgetModel["i"] | null>(null);
 
 	const menuAnchor = useRef<HTMLButtonElement>(null);
 	const highlightTimeout = useRef<NodeJS.Timeout>(null);
 
-	const highlight = (id: WidgetModel["i"]) => {
+	const addHighlight = (id: WidgetModel["i"]) => {
+		if (highlightTimeout.current !== null) {
+			clearTimeout(highlightTimeout.current);
+			highlightTimeout.current = null;
+		}
+
 		const elem = document.getElementById(id);
 
 		if (elem !== null) {
 			elem.classList.add("highlight");
 			elem.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
 		}
-		highlightTimeout.current = null;
+		highlightTimeout.current = setTimeout(removeHighlight, 1500, id);
 	};
 
-	const onItemHover = (id: WidgetModel["i"]) => {
-		highlightTimeout.current = setTimeout(highlight, 350, id);
-	};
+	const removeHighlight = (id: WidgetModel["i"]) => {
+		const elem = document.getElementById(id);
 
-	const onItemLeave = (id: WidgetModel["i"]) => {
-		if (highlightTimeout.current !== null) {
-			clearTimeout(highlightTimeout.current);
-		} else {
-			const elem = document.getElementById(id);
-
-			if (elem !== null) {
-				elem.classList.remove("highlight");
-			}
+		if (elem !== null) {
+			elem.classList.remove("highlight");
 		}
+		highlightTimeout.current = null;
 	};
 
 	const changeWidgetName = (id: WidgetModel["i"]) => {
@@ -92,6 +94,10 @@ const ManagePanel: FC<Props> = ({
 	const selectWidgetSize = (size: { w: number; h: number }) => {
 		setShowSizeMenu(false);
 		onAdd(size);
+	};
+
+	const toggleBookmark = (id: WidgetModel["i"], current: WidgetModel["bookmarked"]) => {
+		onToggleBookmark(id, !current);
 	};
 
 	useEffect(
@@ -168,42 +174,47 @@ const ManagePanel: FC<Props> = ({
 				<List sx={{ padding: "0.25rem" }}>
 					{widgets.map((widget) => (
 						<ListItem
-							slotProps={{
-								// click instead of enter/leave?
-								root: { onMouseEnter: () => onItemHover(widget.i), onMouseLeave: () => onItemLeave(widget.i) },
-							}}
-							sx={{ height: "56px" }}
+							sx={{ height: "56px", dispay: "inline-flex", justifyContent: "flex-start", gap: "0.5rem" }}
 							dense
 							key={widget.i}
 							secondaryAction={
 								<div
 									style={{ display: "inline-flex", gap: "0.25rem", alignItems: "center", justifyContent: "flex-start" }}
 								>
-									{editWidgetName === widget.i ? (
-										<IconButton color='primary' onClick={confirmWidgetName}>
-											<DoneOutlineIcon />
-										</IconButton>
-									) : (
-										<IconButton color='primary' onClick={() => changeWidgetName(widget.i)}>
-											<TextFormat />
-										</IconButton>
-									)}
-									<IconButton color='error' onClick={() => onDelete(widget.i)}>
-										<DeleteForever />
-									</IconButton>
-								</div>
-							}
-						>
-							<ListItemButton>
-								<ListItemIcon>
 									<Switch
 										edge='start'
 										checked={widget.active}
 										color='primary'
 										onChange={(_, checked) => onEnable(widget.i, checked)}
 									/>
-								</ListItemIcon>
+									{mode === "origin" && (
+										<IconButton color='primary' onClick={() => toggleBookmark(widget.i, widget.bookmarked)}>
+											{widget.bookmarked ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+										</IconButton>
+									)}
+									{mode === "origin" &&
+										(editWidgetName === widget.i ? (
+											<IconButton color='primary' onClick={confirmWidgetName}>
+												<DoneOutlineIcon />
+											</IconButton>
+										) : (
+											<IconButton color='primary' onClick={() => changeWidgetName(widget.i)}>
+												<TextFormat />
+											</IconButton>
+										))}
+									<IconButton color='error' onClick={() => onDelete(widget.i)}>
+										<DeleteForever />
+									</IconButton>
+								</div>
+							}
+						>
+							<>
+								<IconButton disabled={!widget.active} color='primary' onClick={() => addHighlight(widget.i)}>
+									<LocationSearchingIcon />
+								</IconButton>
+
 								<ListItemText
+									sx={{ marginLeft: "2rem" }}
 									slotProps={{ primary: { sx: { fontSize: "1rem", height: "40px", alignContent: "center" } } }}
 								>
 									{widget.i === editWidgetName ? (
@@ -217,7 +228,7 @@ const ManagePanel: FC<Props> = ({
 										widget.name
 									)}
 								</ListItemText>
-							</ListItemButton>
+							</>
 						</ListItem>
 					))}
 				</List>

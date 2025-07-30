@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import type { FC } from "react";
 
 import Menu from "@mui/material/Menu";
+import Badge from "@mui/material/Badge";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import MenuItem from "@mui/material/MenuItem";
@@ -10,15 +11,18 @@ import CancelOutlined from "@mui/icons-material/CancelOutlined";
 import SettingsApplicationsIcon from "@mui/icons-material/SettingsApplications";
 
 import styles from "../styles.module.css";
+import { Tooltip } from "@mui/material";
 
 interface Props {
 	addMode: boolean;
+	unassignedWidgetsNum: number;
+	mode: "bucket" | "origin";
 	onCancel: VoidFunction;
 	onManageWidgets: VoidFunction;
 	onSelectWidgetSize: (size: { w: number; h: number }) => void;
 }
 
-const Toolbar: FC<Props> = ({ addMode, onCancel, onManageWidgets, onSelectWidgetSize }) => {
+const Toolbar: FC<Props> = ({ addMode, unassignedWidgetsNum, mode, onCancel, onManageWidgets, onSelectWidgetSize }) => {
 	const [showSizeMenu, setShowSizeMenu] = useState(false);
 	const menuAnchor = useRef<HTMLButtonElement>(null);
 
@@ -30,7 +34,7 @@ const Toolbar: FC<Props> = ({ addMode, onCancel, onManageWidgets, onSelectWidget
 	return (
 		<div className={styles.toolbar}>
 			<div className={styles["toolbar-group"]}>
-				{!addMode && (
+				{mode === "origin" && !addMode && (
 					<>
 						<Button ref={menuAnchor} startIcon={<AddIcon />} onClick={() => setShowSizeMenu(true)}>
 							Add widget
@@ -55,16 +59,39 @@ const Toolbar: FC<Props> = ({ addMode, onCancel, onManageWidgets, onSelectWidget
 						</Menu>
 					</>
 				)}
-				{addMode && (
+				{mode === "origin" && addMode && (
 					<Button startIcon={<CancelOutlined />} onClick={onCancel}>
 						Cancel
 					</Button>
 				)}
 			</div>
 			<div className={styles["toolbar-group"]}>
-				<Button startIcon={<SettingsApplicationsIcon />} disabled={addMode} onClick={onManageWidgets}>
-					Manage widgets
-				</Button>
+				{mode === "bucket" && (
+					/* badge is not shown if badgeContent={0} by default - `showZero` */
+					<Tooltip title={`Unassigned widgets: ${unassignedWidgetsNum}`} placement='top-start'>
+						<Badge
+							color='secondary'
+							badgeContent={unassignedWidgetsNum}
+							sx={{
+								"& .MuiBadge-badge": {
+									top: "6px",
+									color: "var(--nav-bg)",
+									border: "2px solid var(--nav-bg)",
+									fontWeight: 600,
+								},
+							}}
+						>
+							<Button startIcon={<SettingsApplicationsIcon />} disabled={addMode} onClick={onManageWidgets}>
+								Manage widgets
+							</Button>
+						</Badge>
+					</Tooltip>
+				)}
+				{mode === "origin" && (
+					<Button startIcon={<SettingsApplicationsIcon />} disabled={addMode} onClick={onManageWidgets}>
+						Manage widgets
+					</Button>
+				)}
 			</div>
 		</div>
 	);

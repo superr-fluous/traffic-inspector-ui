@@ -44,6 +44,17 @@ const Navbar = () => {
 						Flows
 					</Link>
 				</li>
+				<li className={location.startsWith("/statistics") ? styles.active : undefined}>
+					<Link
+						href='/statistics'
+						onClick={handleNavigate("/statistics")}
+						variant='navLink'
+						underline='none'
+						color={COLORS["off-white"]}
+					>
+						Statistics
+					</Link>
+				</li>
 			</ul>
 
 			<div className={styles["logo-container"]}>

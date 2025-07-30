@@ -3,10 +3,16 @@ import type { Layout } from "react-grid-layout";
 
 import type { FeaturesList } from "@features";
 
-export interface WidgetModel extends Layout {
-	name: string;
+export interface WidgetModel {
+	i: Layout["i"]; // ensure compatible since used for matching widget in layout
 	active: boolean;
 	config: WidgetConfig;
+	name: string;
+	bookmarked: boolean;
+}
+
+export interface PulledWidgetModel extends WidgetModel {
+	origin: string;
 }
 
 type WidgetDataSource = "flows" | "system";
