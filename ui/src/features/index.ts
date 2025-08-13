@@ -4,6 +4,7 @@ import type { Model as OpenModels } from "./open";
 import Closed from "./closed";
 import type { Model as ClosedModels } from "./closed";
 
+// FLAW: if a closed feature uses an open feature; or an open feature uses another open feature - they can't use $features and need relative imports from actual features to resolve the circular imports
 export const $features = {
 	open: Open,
 	closed: Closed,
@@ -14,6 +15,6 @@ export interface Features {
 	closed: ClosedModels;
 }
 
-export interface FeaturesList {
-	closed: OpenModels[keyof OpenModels]["self"];
+export interface FeatureList {
+	closed: ClosedModels[keyof ClosedModels]["self"];
 }

@@ -19,24 +19,24 @@ import KeyboardDoubleArrowRight from "@mui/icons-material/KeyboardDoubleArrowRig
 
 import { $helpers, $ui } from "@shared";
 
-import { getDataInfoOptions, getDataVisualOptions } from "../../helpers";
-import type { WidgetConfig } from "../../model";
+import type { Config } from "../../model";
 
 import styles from "./styles.module.css";
+import { getDataInfoOptions, getDataVisualOptions } from "../../utilities/mappers";
 
 interface VisualSelectProps {
-	value: WidgetConfig["dataVisual"];
-	dataInfo: WidgetConfig["dataInfo"];
-	onChange: (value: WidgetConfig["dataVisual"]) => void;
+	value: Config["visual"];
+	info: Config["info"];
+	onChange: (value: Config["visual"]) => void;
 }
 
-const VisualSelect: FC<VisualSelectProps> = ({ dataInfo, value, onChange }) => {
-	const dataVisualOptions = getDataVisualOptions(dataInfo);
+const VisualSelect: FC<VisualSelectProps> = ({ info, value, onChange }) => {
+	const visualOptions = getDataVisualOptions(info);
 
 	return (
 		<>
 			<$ui.ribbonLabel label='Visual' placement='bottom-right' className={styles["visual-select-grid"]}>
-				{dataVisualOptions.map((opt, index) => {
+				{visualOptions.map((opt, index) => {
 					return (
 						<div
 							className={$helpers.clsx(
@@ -70,19 +70,19 @@ const VisualSelect: FC<VisualSelectProps> = ({ dataInfo, value, onChange }) => {
 };
 
 interface InfoSelectProps {
-	value: WidgetConfig["dataInfo"];
-	dataSource: WidgetConfig["dataSource"];
-	onChange: (value: WidgetConfig["dataInfo"]) => void;
+	value: Config["info"];
+	source: Config["source"];
+	onChange: (value: Config["info"]) => void;
 }
 
-const InfoSelect: FC<InfoSelectProps> = ({ dataSource, value, onChange }) => {
-	const dataInfoOptions = getDataInfoOptions(dataSource);
+const InfoSelect: FC<InfoSelectProps> = ({ source, value, onChange }) => {
+	const infoOptions = getDataInfoOptions(source);
 
 	return (
 		<>
 			<$ui.ribbonLabel label='Data info' placement='bottom-right' className={styles["wizard-ribbon"]}>
 				<Select value={value} onChange={(e) => onChange(e.target.value as typeof value)} size='small' fullWidth>
-					{dataInfoOptions.map((o) => (
+					{infoOptions.map((o) => (
 						<MenuItem value={o}>{o}</MenuItem>
 					))}
 				</Select>
@@ -92,8 +92,8 @@ const InfoSelect: FC<InfoSelectProps> = ({ dataSource, value, onChange }) => {
 };
 
 interface SourceSelectProps {
-	value: WidgetConfig["dataSource"];
-	onChange: (value: WidgetConfig["dataSource"]) => void;
+	value: Config["source"];
+	onChange: (value: Config["source"]) => void;
 }
 
 const SourceSelect: FC<SourceSelectProps> = ({ value, onChange }) => {
@@ -101,7 +101,7 @@ const SourceSelect: FC<SourceSelectProps> = ({ value, onChange }) => {
 		<>
 			<$ui.ribbonLabel label='Data source' placement='bottom-right' className={styles["wizard-ribbon"]}>
 				<ToggleButtonGroup
-					onChange={(_, val: WidgetConfig["dataSource"]) => onChange(val)}
+					onChange={(_, val: Config["source"]) => onChange(val)}
 					defaultValue='flows'
 					value={value}
 					size='small'
@@ -162,9 +162,9 @@ const Form: FC<ComponentProps<"div">> = (props) => <div {...props} className={st
 
 interface SummaryProps {
 	values: {
-		source: WidgetConfig["dataSource"];
-		info: WidgetConfig["dataInfo"];
-		visual: WidgetConfig["dataVisual"];
+		source: Config["source"];
+		info: Config["info"];
+		visual: Config["visual"];
 	};
 	onConfirm: VoidFunction;
 	onReset: VoidFunction;

@@ -1,0 +1,35 @@
+.widget-container {
+	padding: 0.75rem;
+	height: 100%;
+	width: 100%;
+	max-height: 100%;
+	max-width: 100%;
+	overflow: hidden;
+
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+
+	border-radius: 8px;
+	background: var(--off-bg);
+	transition: all 0.15s ease-in;
+	border: 2px solid hsla(248, 46%, 60%, 0.3);
+	position: relative;
+}
+
+.widget-container.empty {
+	background: var(--accent);
+	cursor: pointer;
+}
+
+.widget-container.empty:hover {
+	background: hsla(246, 13%, 29%, 0.6);
+}
+
+.widget-container .widget-header {
+	flex: 0 0 auto;
+}
+
+.widget-container:global(.highlight) {
+	background: hsla(246, 13%, 29%, 0.6);
+}

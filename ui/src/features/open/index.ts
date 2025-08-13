@@ -1,28 +1,32 @@
-import IP from "./ip";
+import ip from "./ip";
 import type { Model as IPModel } from "./ip";
 
-import OS from "./os";
+import os from "./os";
 import type { Model as OSModel } from "./os";
 
-import ASN from "./asn";
+import asn from "./asn";
 import type { Model as ASNModel } from "./asn";
 
-import Category from "./category";
+import category from "./category";
 import type { Model as CategoryModel } from "./category";
 
-import Protocol from "./protocol";
+import protocol from "./protocol";
 import type { Model as ProtocolModel } from "./protocol";
 
-import Country from "./country";
+import country from "./country";
 import type { Model as CountryModel } from "./country";
 
+import widget from "./widget";
+import type { Model as WidgetModel } from "./widget";
+
 export default {
-	ip: IP,
-	os: OS,
-	asn: ASN,
-	category: Category,
-	protocol: Protocol,
-	country: Country,
+	ip,
+	os,
+	asn,
+	category,
+	protocol,
+	country,
+	widget,
 };
 
 export interface Model {
@@ -32,4 +36,5 @@ export interface Model {
 	os: OSModel;
 	protocol: ProtocolModel;
 	country: CountryModel;
+	widget: WidgetModel;
 }

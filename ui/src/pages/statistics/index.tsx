@@ -1,16 +1,9 @@
-import React, { useState } from "react";
-import type { Layout } from "react-grid-layout";
+import React from "react";
 
-import { $ui } from "@shared";
-
-// FIXME: import is not code-style compliant...
-import type { WidgetModel } from "../../shared/ui/dashboard/model";
+import { $features } from "@features";
 
 const Dashboard = () => {
-	const [widgets] = useState<WidgetModel[]>([]);
-	const [layout] = useState<Layout[]>([]);
-
-	return <$ui.dashboard mode='origin' layout={layout} widgets={widgets} onChange={() => {}} />;
+	return <$features.closed.dashboard.views.statistics />;
 };
 
 export default Dashboard;

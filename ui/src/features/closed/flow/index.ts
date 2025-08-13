@@ -6,17 +6,19 @@ import TotalOverTime from "./views/total-overtime";
 import type { Flow, FlowDetailed } from "./model";
 
 export default {
-  view: {
-    info: Info,
-    table: Table,
-    total: Total,
-    chart: {
-      totalOverTime: TotalOverTime,
-    },
-  },
+	view: {
+		info: Info,
+		table: Table,
+		total: Total,
+		chart: {
+			totalOverTime: TotalOverTime,
+		},
+	},
 };
 
 export interface Model {
-  default: Flow;
-  detailed: FlowDetailed;
+	self: "flow";
+	default: Flow;
+	detailed: FlowDetailed;
 }
+

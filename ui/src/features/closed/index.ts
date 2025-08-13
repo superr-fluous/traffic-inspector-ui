@@ -1,10 +1,15 @@
-import Flow from './flow';
-import type { Model as FlowModel } from './flow';
+import flow from "./flow";
+import type { Model as FlowModel } from "./flow";
+
+import dashboard from "./dashboard";
+import type { Model as DashboardModel } from "./dashboard";
 
 export default {
-	flow: Flow,
+	flow,
+	dashboard,
 };
 
 export interface Model {
-	flow: FlowModel,
-};
+	flow: FlowModel;
+	dashboard: DashboardModel;
+}

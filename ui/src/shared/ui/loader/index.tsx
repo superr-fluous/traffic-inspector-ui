@@ -23,11 +23,10 @@ const Loader: FC<Props> = ({ loading, error, size = 32, thickness = 2, children,
 			justifyContent: "center",
 			height: "100%",
 			width: "100%",
-			backgroundColor: "transparent",
 			...divProps.style,
 		}}
 	>
-		<CircularProgress style={{ color: COLORS.accent }} size={size} thickness={thickness} />
+		{loading && <CircularProgress style={{ color: COLORS.accent }} size={size} thickness={thickness} />}
 		{!!error && (
 			<Typography
 				sx={{ display: "block", width: "100%", height: "100%", textAlign: "center", alignContent: "middle" }}
@@ -41,4 +40,3 @@ const Loader: FC<Props> = ({ loading, error, size = 32, thickness = 2, children,
 );
 
 export default Loader;
-

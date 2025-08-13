@@ -9,7 +9,10 @@ import RibbonLabel from "./ribbon-label";
 import BlockHeader from "./block-header";
 import TableOfContents from "./table-of-contents";
 
+import sinks from "./sinks";
+
 export default {
+	sinks,
 	charts: Charts,
 	loader: Loader,
 	overlay: Overlay,

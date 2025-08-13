@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Layout } from "react-grid-layout";
 
-import type { FeaturesList } from "@features";
+import type { FeatureList } from "@features";
 
 export interface WidgetModel {
 	i: Layout["i"]; // ensure compatible since used for matching widget in layout
@@ -16,7 +16,7 @@ export interface PulledWidgetModel extends WidgetModel {
 }
 
 type WidgetDataSource = "flows" | "system";
-type WidgetInfo = FeaturesList["closed"] | "TOTAL";
+type WidgetInfo = FeatureList["closed"] | "TOTAL";
 type WidgetVisual = "bar" | "pie" | "line" | "sensor";
 
 export type WidgetConfig = Partial<
