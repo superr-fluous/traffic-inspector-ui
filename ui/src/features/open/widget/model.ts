@@ -5,10 +5,8 @@ import type { FeatureList } from "@features";
 // --- GENERAL ---
 export interface Model {
 	i: Layout["i"]; // ensure compatible since used for matching widget in layout
-	// active: boolean; // inpertinent to widget
 	config: Config;
 	name: string;
-	// bookmarked: boolean; // inpertinent to widget
 }
 
 export interface PulledWidgetModel extends Model {
