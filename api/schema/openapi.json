@@ -1,0 +1,727 @@
+{
+ "components": {
+  "schemas": {
+   "AddDashboardWidgetParamsBody": {
+    "additionalProperties": false,
+    "properties": {
+     "$schema": {
+      "description": "A URL to the JSON Schema for this object.",
+      "examples": [
+       "http://localhost:8000/api/v1/schemas/AddDashboardWidgetParamsBody.json"
+      ],
+      "format": "uri",
+      "readOnly": true,
+      "type": "string"
+     },
+     "i": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "i"
+    ],
+    "type": "object"
+   },
+   "Dashboard": {
+    "additionalProperties": false,
+    "properties": {
+     "active": {
+      "type": "boolean"
+     },
+     "h": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "i": {
+      "type": "string"
+     },
+     "w": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "x": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     },
+     "y": {
+      "format": "int64",
+      "type": [
+       "integer",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "i",
+     "x",
+     "y",
+     "w",
+     "h",
+     "active"
+    ],
+    "type": "object"
+   },
+   "DeleteDashboardWidgetParamsBody": {
+    "additionalProperties": false,
+    "properties": {
+     "$schema": {
+      "description": "A URL to the JSON Schema for this object.",
+      "examples": [
+       "http://localhost:8000/api/v1/schemas/DeleteDashboardWidgetParamsBody.json"
+      ],
+      "format": "uri",
+      "readOnly": true,
+      "type": "string"
+     },
+     "i": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "i"
+    ],
+    "type": "object"
+   },
+   "ErrorDetail": {
+    "additionalProperties": false,
+    "properties": {
+     "location": {
+      "description": "Where the error occurred, e.g. 'body.items[3].tags' or 'path.thing-id'",
+      "type": "string"
+     },
+     "message": {
+      "description": "Error message text",
+      "type": "string"
+     },
+     "value": {
+      "description": "The value at the given location"
+     }
+    },
+    "type": "object"
+   },
+   "ErrorModel": {
+    "additionalProperties": false,
+    "properties": {
+     "detail": {
+      "description": "A human-readable explanation specific to this occurrence of the problem.",
+      "examples": [
+       "Property foo is required but is missing."
+      ],
+      "type": "string"
+     },
+     "errors": {
+      "description": "Optional list of individual error details",
+      "items": {
+       "$ref": "#/components/schemas/ErrorDetail"
+      },
+      "type": [
+       "array",
+       "null"
+      ]
+     },
+     "instance": {
+      "description": "A URI reference that identifies the specific occurrence of the problem.",
+      "examples": [
+       "https://example.com/error-log/abc123"
+      ],
+      "format": "uri",
+      "type": "string"
+     },
+     "status": {
+      "description": "HTTP status code",
+      "examples": [
+       400
+      ],
+      "format": "int64",
+      "type": "integer"
+     },
+     "title": {
+      "description": "A short, human-readable summary of the problem type. This value should not change between occurrences of the error.",
+      "examples": [
+       "Bad Request"
+      ],
+      "type": "string"
+     },
+     "type": {
+      "default": "about:blank",
+      "description": "A URI reference to human-readable documentation for the error.",
+      "examples": [
+       "https://example.com/errors/example"
+      ],
+      "format": "uri",
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "PatchWidgetParamsBody": {
+    "additionalProperties": false,
+    "properties": {
+     "$schema": {
+      "description": "A URL to the JSON Schema for this object.",
+      "examples": [
+       "http://localhost:8000/api/v1/schemas/PatchWidgetParamsBody.json"
+      ],
+      "format": "uri",
+      "readOnly": true,
+      "type": "string"
+     },
+     "config": {
+      "$ref": "#/components/schemas/WidgetConfig"
+     },
+     "name": {
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "UpdateDashboardLayoutBody": {
+    "additionalProperties": false,
+    "properties": {
+     "$schema": {
+      "description": "A URL to the JSON Schema for this object.",
+      "examples": [
+       "http://localhost:8000/api/v1/schemas/UpdateDashboardLayoutBody.json"
+      ],
+      "format": "uri",
+      "readOnly": true,
+      "type": "string"
+     },
+     "widgets": {
+      "items": {
+       "$ref": "#/components/schemas/Dashboard"
+      },
+      "type": [
+       "array",
+       "null"
+      ]
+     }
+    },
+    "required": [
+     "widgets"
+    ],
+    "type": "object"
+   },
+   "Widget": {
+    "additionalProperties": false,
+    "properties": {
+     "$schema": {
+      "description": "A URL to the JSON Schema for this object.",
+      "examples": [
+       "http://localhost:8000/api/v1/schemas/Widget.json"
+      ],
+      "format": "uri",
+      "readOnly": true,
+      "type": "string"
+     },
+     "bookmarked": {
+      "description": "Bookmarked flag",
+      "type": [
+       "boolean",
+       "null"
+      ]
+     },
+     "config": {
+      "$ref": "#/components/schemas/WidgetConfig",
+      "description": "Widget config"
+     },
+     "i": {
+      "description": "Unique widget ID",
+      "minLength": 1,
+      "type": "string"
+     },
+     "name": {
+      "description": "Displayed name",
+      "minLength": 1,
+      "type": "string"
+     }
+    },
+    "required": [
+     "i",
+     "name",
+     "config",
+     "bookmarked"
+    ],
+    "type": "object"
+   },
+   "WidgetConfig": {
+    "additionalProperties": false,
+    "properties": {
+     "info": {
+      "type": "string"
+     },
+     "source": {
+      "type": "string"
+     },
+     "visual": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "source",
+     "info",
+     "visual"
+    ],
+    "type": "object"
+   }
+  }
+ },
+ "info": {
+  "title": "Traffic Inspector Web API",
+  "version": "1.0"
+ },
+ "openapi": "3.1.0",
+ "paths": {
+  "/dashboard/add": {
+   "post": {
+    "description": "Adds existing widget to Dashboard",
+    "operationId": "dashboard-add-widget",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AddDashboardWidgetParamsBody"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Validation error",
+         "detail": "[ShouldBindJson Error]"
+        }
+       }
+      },
+      "description": "Invalid request"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database Error]"
+        }
+       }
+      },
+      "description": "Database error"
+     }
+    },
+    "summary": "Add widget to Dashboard",
+    "tags": [
+     "dashboard",
+     "widget",
+     "POST"
+    ]
+   }
+  },
+  "/dashboard/delete": {
+   "delete": {
+    "description": "Delete existing widget from Dashboard",
+    "operationId": "dashboard-delete-widget",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DeleteDashboardWidgetParamsBody"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Validation error",
+         "detail": "[ShouldBindJson Error]"
+        }
+       }
+      },
+      "description": "Invalid request"
+     },
+     "409": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "No widgets affected"
+        }
+       }
+      },
+      "description": "No effect"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database Error]"
+        }
+       }
+      },
+      "description": "Internal server error"
+     }
+    },
+    "summary": "Delete widget from Dashboard",
+    "tags": [
+     "dashboard",
+     "widget",
+     "DELETE"
+    ]
+   }
+  },
+  "/dashboard/layout": {
+   "patch": {
+    "description": "Update widgets' layouts",
+    "operationId": "dashboard-update-layout",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/UpdateDashboardLayoutBody"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Validation error",
+         "detail": "[ShouldBindJson Error]"
+        }
+       }
+      },
+      "description": "Validation error"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database Error]"
+        }
+       }
+      },
+      "description": "Internal server error"
+     }
+    },
+    "summary": "Update widget layouts",
+    "tags": [
+     "dashboard",
+     "widget",
+     "PATCH"
+    ]
+   }
+  },
+  "/widget": {
+   "put": {
+    "description": "Make new widget",
+    "operationId": "create-widget",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/Widget"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Invalid request",
+         "detail": "[ShouldBindJson Error]"
+        }
+       }
+      },
+      "description": "Invalid request"
+     },
+     "409": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Widget already exists"
+        }
+       }
+      },
+      "description": "Widget already exists"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database error]"
+        }
+       }
+      },
+      "description": "Internal server error"
+     }
+    },
+    "summary": "Create a widget",
+    "tags": [
+     "widget",
+     "CREATE"
+    ]
+   }
+  },
+  "/widget/{id}": {
+   "delete": {
+    "description": "Delete widget (also deletes it from Dashboard)",
+    "operationId": "delete-widget",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "widgetID",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database error]"
+        }
+       }
+      },
+      "description": "Internal server error"
+     }
+    },
+    "summary": "Delete widget",
+    "tags": [
+     "widget",
+     "DELETE"
+    ]
+   },
+   "get": {
+    "description": "Get widget by an ID",
+    "operationId": "get-widget",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "widgetID",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Widget"
+        }
+       }
+      },
+      "description": "OK"
+     },
+     "404": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Widget not found"
+        }
+       }
+      },
+      "description": "Not found"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database error]"
+        }
+       }
+      },
+      "description": "Database error"
+     }
+    },
+    "summary": "Get widget",
+    "tags": [
+     "widget",
+     "GET"
+    ]
+   },
+   "patch": {
+    "description": "Change widget object",
+    "operationId": "patch-widget",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "widgetID",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PatchWidgetParamsBody"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "409": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "No effect",
+         "detail": "No widgets affected"
+        }
+       }
+      },
+      "description": "No effect"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database error]"
+        }
+       }
+      },
+      "description": "Internal server error"
+     }
+    },
+    "summary": "Patch widget",
+    "tags": [
+     "widget",
+     "PATCH"
+    ]
+   }
+  },
+  "/widget/{id}/bookmark/{state}": {
+   "patch": {
+    "description": "Add/remove widget from Dashboard",
+    "operationId": "toggle-widget-bookmark",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "widgetID",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     },
+     {
+      "in": "path",
+      "name": "state",
+      "required": true,
+      "schema": {
+       "type": "string"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Success with no response body"
+     },
+     "204": {
+      "description": "No Content"
+     },
+     "400": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Validation error",
+         "detail": "value must be 'true' or 'false', received [state]"
+        }
+       }
+      },
+      "description": "Invalid request"
+     },
+     "500": {
+      "content": {
+       "application/json": {
+        "example": {
+         "error": "Database error",
+         "detail": "[Database error]"
+        }
+       }
+      },
+      "description": "Internal server error"
+     }
+    },
+    "summary": "Toggle widget's bookmark state",
+    "tags": [
+     "widget",
+     "PATCH"
+    ]
+   }
+  }
+ },
+ "servers": [
+  {
+   "url": "http://localhost:8000/api/v1"
+  }
+ ]
+}

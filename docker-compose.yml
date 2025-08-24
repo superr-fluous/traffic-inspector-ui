@@ -8,8 +8,18 @@ services:
       - postgres-net
     expose:
       - "8000"
+      - "8001" # for external connections
+    ports:
+      - 8000:8000
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/app/healthchecker"]
+      interval: 5s
+      timeout: 3s
+      retries: 2
+      start_period: 10s # Give the app time to start before the first check
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_DBNAME: traffic_inspector
@@ -17,6 +27,8 @@ services:
       POSTGRES_PASSWORD: password # secret not really needed rn
       POSTGRES_PORT: 5432
       API_ENDPOINT: :8000
+      BACKEND_URL: http://backend:8000
+      GIN_MODE: release
 
   nginx:
     build:
@@ -25,7 +37,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy # Wait for the backend to be healthy
     networks:
       - backend-net
 
@@ -39,9 +52,13 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db/flow_info.sql:/docker-entrypoint-initdb.d/1.sql
     networks:
       - postgres-net  # only accessible to backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   backend-net:

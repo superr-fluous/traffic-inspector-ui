@@ -1,0 +1,24 @@
+# docker-compose -f docker-compose.yml -f docker-compose.test.yml up --build --abort-on-container-exit tester
+services:
+  tester:
+    container_name: tester
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    command: go test -v ./api-integration
+    depends_on:
+      backend:
+        condition: service_healthy # Wait for the backend to be healthy
+    environment:
+      # The port should match what's exposed in the backend service
+      - BACKEND_URL=http://backend:8000
+    networks:
+      # The tester needs to be on the same network as the backend
+      - backend-net
+
+  backend:
+    restart: "no"
+
+networks:
+  backend-net:
+    driver: bridge

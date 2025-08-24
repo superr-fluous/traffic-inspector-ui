@@ -1,0 +1,9 @@
+services:
+  backend:
+    environment:
+      GIN_MODE: debug
+  postgres:
+    # override volumes so nothing persists
+    volumes:
+      - type: tmpfs
+        target: /var/lib/postgresql/data
