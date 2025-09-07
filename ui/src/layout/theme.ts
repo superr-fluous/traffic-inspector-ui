@@ -17,6 +17,7 @@ export const COLORS = {
 
 const theme: ThemeOptions = {
 	palette: {
+		mode: "dark",
 		background: { default: COLORS.bg, paper: COLORS.disabled },
 		primary: {
 			dark: COLORS.accent,
@@ -168,7 +169,7 @@ const theme: ThemeOptions = {
 				variantMapping: {
 					navTitle: "a",
 					blockHeader: "h2",
-					pageHeader: "h1",
+					pageHeader: "span",
 					base: "span",
 					baseXl: "span",
 				},
@@ -244,4 +245,3 @@ const theme: ThemeOptions = {
 };
 
 export default theme;
-

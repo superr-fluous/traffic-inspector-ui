@@ -17,5 +17,6 @@ export default {
 };
 
 export interface Model {
+	self: "country";
 	enum: ENUM;
 }

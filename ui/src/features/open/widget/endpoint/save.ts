@@ -1,7 +1,9 @@
 import { $api } from "@services";
-import { Config, Model } from "../model";
+import { Model } from "../model";
+
+type SaveParams = Partial<Omit<Model, "i" | "bookmarked">>
 
 export default {
-	config: (id: Model["i"], config: Config) => $api.post(`widget/${id}/config`, { body: JSON.stringify(config) }),
-	name: (id: Model["i"], name: string) => $api.post(`widget/${id}/name`, { body: JSON.stringify({ name }) }),
+	self: (id: Model["i"], params: SaveParams) => $api.patch(`widgets/${id}`, { body: JSON.stringify(params) }),
+	bookmark: (id: Model["i"], state: Model["bookmarked"]) => $api.patch(`widgets/${id}/${state}`),
 };

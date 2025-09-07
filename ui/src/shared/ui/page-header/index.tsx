@@ -1,11 +1,15 @@
 import React from "react";
-import type { FC, PropsWithChildren } from "react";
+import type { CSSProperties, FC, PropsWithChildren } from "react";
 
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 
-const PageHeader: FC<PropsWithChildren> = ({ children }) => (
-	<Typography variant='pageHeader' sx={{ position: "relative", width: "100%", paddingInline: "4rem", height: "4rem" }}>
+interface Props extends PropsWithChildren {
+	style?: CSSProperties;
+}
+
+const PageHeader: FC<Props> = ({ children, style }) => (
+	<Typography variant='pageHeader' sx={{ width: "100%" }} style={style}>
 		{children}
 		<Divider
 			sx={{
@@ -16,4 +20,3 @@ const PageHeader: FC<PropsWithChildren> = ({ children }) => (
 );
 
 export default PageHeader;
-

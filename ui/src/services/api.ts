@@ -17,37 +17,34 @@ export interface $ApiFail {
 type $ApiOptions = Pick<Options, "signal" | "body">;
 
 async function parseNetResponse<T = AnyObject>(res: KyResponse<unknown>) {
-	let response: $ApiSuccess<T> | $ApiFail;
+  let response: $ApiSuccess<T> | $ApiFail;
 
-	switch (res.status) {
-		case 200: {
-			const resData: T = await res.json();
-			response = { ok: true, data: resData };
-			break;
-		}
-		case 500:
-		case 501:
-		case 503: {
-			let error = "Request prompted an error";
-			const resData: AnyObject = await res.json();
-			if ("detail" in resData) {
-				error = resData.detail as string;
-			}
-			response = { ok: false, error, code: res.status };
-			break;
-		}
-		default:
-			response = {
-				ok: false,
-				error: "Request prompted an error",
-				code: res.status,
-			};
-			break;
-	}
-	// TODO: consider possible errors (network and backend); whether to use error from response
+  const text = await res.text();
+  const hasBody = text.trim().length > 0;
+  let resData: T | AnyObject = {} as T;
 
-	return response;
+  if (hasBody) {
+    try {
+      resData = JSON.parse(text) as T;
+    } catch {
+      // optionally log or ignore parse errors
+      resData = {} as T;
+    }
+  }
+
+  if (res.ok) {
+    response = { ok: true, data: resData };
+  } else {
+    let error = "Request prompted an error";
+    if (hasBody && typeof resData === "object" && resData !== null && "detail" in resData) {
+      error = (resData as AnyObject).detail as string;
+    }
+    response = { ok: false, error, code: res.status };
+  }
+
+  return response;
 }
+
 
 const kyInstance = ky.create({
 	prefixUrl: "/api/v1",

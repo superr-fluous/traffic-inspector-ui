@@ -44,15 +44,15 @@ const Navbar = () => {
 						Flows
 					</Link>
 				</li>
-				<li className={location.startsWith("/statistics") ? styles.active : undefined}>
+				<li className={location.startsWith("/widgets") ? styles.active : undefined}>
 					<Link
-						href='/statistics'
-						onClick={handleNavigate("/statistics")}
+						href='/widgets'
+						onClick={handleNavigate("/widgets")}
 						variant='navLink'
 						underline='none'
 						color={COLORS["off-white"]}
 					>
-						Statistics
+						Widgets
 					</Link>
 				</li>
 			</ul>

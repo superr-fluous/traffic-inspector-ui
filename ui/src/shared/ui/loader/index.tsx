@@ -13,6 +13,7 @@ type Props = ComponentProps<"div"> &
 		error: ReactNode;
 	};
 
+// TODO: rework - headless container
 const Loader: FC<Props> = ({ loading, error, size = 32, thickness = 2, children, ...divProps }) => (
 	<div
 		{...divProps}

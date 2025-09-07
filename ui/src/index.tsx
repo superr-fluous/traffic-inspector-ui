@@ -10,6 +10,7 @@ import Navbar from "@layout/navbar";
 import FlowsPage from "@pages/flows";
 import DashboardPage from "@pages/dashboard";
 import StatisticsPage from "@pages/statistics";
+import WidgetsPage from "@pages/widgets";
 
 import "./index.css";
 
@@ -24,7 +25,7 @@ const App = () => {
 			<Navbar />
 			<Switch>
 				<Route path='/dashboard' component={DashboardPage} />
-				<Route path='/statistics' component={StatisticsPage} />
+				<Route path='/widgets' component={WidgetsPage} />
 				<Route path='/flows/:id?' component={FlowsPage} />
 				<Route path='*'>
 					<Redirect to='/dashboard' />

@@ -1,0 +1,105 @@
+.wizard-container {
+	width: 100%;
+	height: 100%;
+
+	max-width: 100%;
+	max-height: 100%;
+
+	overflow: hidden;
+
+	/* display: flex; */
+	/* align-items: flex-start; */
+	/* gap: 4rem; */
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 4rem;
+
+	border: 1px solid var(--grey);
+	border-radius: 8px;
+}
+
+.wizard-container-loader {
+	grid-column: span 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.wizard-preview {
+	flex: 0 0 50%;
+	height: 100%;
+	max-height: 100%;
+	overflow: hidden;
+	padding: 3rem 2rem;
+}
+
+.wizard-form {
+	flex: 0 0 50%;
+	height: 100%;
+	max-height: 100%;
+	overflow: hidden;
+
+	padding: 3rem 2rem;
+}
+
+.wizard-ribbon {
+	padding: 0.75rem 2rem; /* repeats ribbon-label origin padding */
+	width: 35%;
+}
+
+.visual-select-option {
+	grid-column: span 1;
+
+	border: 2px solid hsla(248, 46%, 60%, 0.3);
+	border-radius: 8px;
+	transition: all 150ms ease-in;
+	cursor: pointer;
+
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.25rem;
+}
+
+.visual-select-option:hover {
+	border-color: hsla(248, 46%, 60%);
+}
+
+.visual-select-option.extended {
+	grid-column: span 2;
+}
+
+.visual-select-option.selected {
+	background: var(--accent-600);
+}
+
+.visual-select-grid {
+	display: grid;
+	height: 100%;
+	width: 100%;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.5rem;
+}
+
+@container wizard (height < 192px) {
+	.wizard-form {
+		flex-direction: row;
+		height: 82px;
+	}
+
+	.wizard-ribbon {
+		padding: 0.5rem 1rem;
+		width: 45%;
+	}
+
+	.visual-select-grid {
+		grid-auto-flow: column;
+		border: none;
+		padding-block: 0 0.5rem;
+	}
+
+	.visual-select-option {
+		padding: 0 0.25rem;
+	}
+}

@@ -2,7 +2,7 @@ FROM node:lts as build
 
 WORKDIR /frontend
 COPY package*.json ./
-RUN npm ci
+RUN npm i
 
 # Copy the rest of the application files
 COPY assets ./assets
@@ -37,9 +37,9 @@ RUN ln -sf /etc/nginx/sites-available/traffic-inspector-ui /etc/nginx/sites-enab
 
 RUN sed -i '/http {/a include /etc/nginx/sites-enabled/*;' /etc/nginx/nginx.conf
 
-COPY docker-start.sh /start.sh
+# COPY docker-start.sh /start.sh
 
-RUN apk add --no-cache dos2unix && dos2unix /start.sh
-RUN chmod +x /start.sh
+# RUN chmod +x /start.sh
 
-CMD ["/start.sh"]
+# CMD ["/start.sh"]
+CMD ["nginx", "-g", "daemon off;"]

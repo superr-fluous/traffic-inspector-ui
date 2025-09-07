@@ -17,4 +17,5 @@ export interface Features {
 
 export interface FeatureList {
 	closed: ClosedModels[keyof ClosedModels]["self"];
+	open: OpenModels[keyof OpenModels]["self"];
 }

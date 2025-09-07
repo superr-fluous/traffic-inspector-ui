@@ -13,9 +13,10 @@ func SetupRoutes(engine *gin.Engine, db *gorm.DB) {
 	api.GET("/health", h.Health.Get)
 
 	{
-		widgetRoutes := api.Group("/widget")
+		widgetRoutes := api.Group("/widgets")
 		{
-			widgetRoutes.PUT("", h.Widget.Put)
+			widgetRoutes.GET("/all", h.Widget.GetAll)
+			widgetRoutes.PUT("/", h.Widget.Put)
 			widgetRoutes.GET("/:id", h.Widget.Get)
 			widgetRoutes.PATCH("/:id", h.Widget.Update)
 			widgetRoutes.DELETE("/:id", h.Widget.Delete)

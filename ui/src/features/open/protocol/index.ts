@@ -29,6 +29,7 @@ export default {
 };
 
 export interface Model {
+	self: "protocol";
 	dns: DNSModel;
 	tls: TLSModel;
 	enum: ENUM;

@@ -5,31 +5,25 @@ import type { FeatureList } from "@features";
 // --- GENERAL ---
 export interface Model {
 	i: Layout["i"]; // ensure compatible since used for matching widget in layout
-	config: Config;
 	name: string;
+	dataSource: DataSource;
+	dataInfo: DataInfo;
+	dataVisual: DataVisual
+	config: Config;
+	filters: Filters;
+	bookmarked: boolean;
 }
 
 export interface PulledWidgetModel extends Model {
 	origin: string;
 }
 
-// --- CONFIG ---
-type WidgetDataSource = "flows" | "system";
-type WidgetInfo = FeatureList["closed"] | "TOTAL";
-type WidgetVisual = "bar" | "pie" | "line" | "sensor";
+type DataSource = "flows" | "system";
+type DataInfo = "asn" | "ip" | "os" | "protocol" | "country" | "category" | "total";
+type DataVisual = "bar" | "pie" | "line" | "sensor";
 
-export type Config = Partial<
-	| {
-			source: WidgetDataSource;
-			info: Exclude<WidgetInfo, "TOTAL">;
-			visual: Exclude<WidgetVisual, "sensor">;
-	  }
-	| {
-			source: WidgetDataSource;
-			info: Extract<WidgetInfo, "TOTAL">;
-			visual: Extract<WidgetVisual, "line" | "sensor">;
-	  }
->;
+export interface Config {}
+export interface Filters {}
 
 // --- MISC ---
 export interface GenericWidgetViewProps {

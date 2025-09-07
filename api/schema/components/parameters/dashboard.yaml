@@ -1,3 +1,0 @@
-type: string
-enum: [statistcs, home]
-description: Dashboard type (maps to pages in UI - Home, Statistics)

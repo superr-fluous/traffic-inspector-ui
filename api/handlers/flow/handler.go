@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/koltiradw/TrafficInspector/api/models"
 	"github.com/koltiradw/TrafficInspector/api/query"
-	"github.com/koltiradw/TrafficInspector/api/utils/dbutils"
+	"github.com/koltiradw/TrafficInspector/api/utils"
 	"gorm.io/gorm"
 )
 
@@ -54,7 +54,7 @@ type FlowPreview struct {
 
 type GetAllResponse struct {
 	data       *[]*models.Flow
-	pagination *dbutils.Pagination
+	pagination *utils.Pagination
 }
 
 // returns a paginated list of flows
@@ -62,9 +62,9 @@ func (h *Handler) GetAll(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
-	p := dbutils.Pagination{Page: page, Size: limit}
+	p := utils.Pagination{Page: page, Size: limit}
 
-	flows, err := h.q.Flow.WithContext(c.Request.Context()).Scopes(dbutils.Paginate(&p)).Order(h.q.Flow.LastSeen.Desc()).Select(
+	flows, err := h.q.Flow.WithContext(c.Request.Context()).Scopes(utils.Paginate(&p)).Order(h.q.Flow.LastSeen.Desc()).Select(
 		h.q.Flow.Id,
 		h.q.Flow.LastSeen,
 		h.q.Flow.SrcIp,

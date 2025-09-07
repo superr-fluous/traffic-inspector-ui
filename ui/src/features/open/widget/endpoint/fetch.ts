@@ -2,5 +2,6 @@ import { $api } from "@services";
 import { Config, Model } from "../model";
 
 export default {
-	profile: (id: Model["i"]) => $api.get<Model>(`widget/${id}`),
+	self: (id: Model["i"]) => $api.get<Model>(`widgets/${id}`),
+	all: () => $api.get<Model[]>("widgets/all"),
 };

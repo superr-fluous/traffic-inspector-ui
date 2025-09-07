@@ -18,5 +18,6 @@ export default {
 };
 
 export interface Model {
+	self: "category";
 	enum: ENUM;
 }

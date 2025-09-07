@@ -28,8 +28,12 @@ func newWidget(db *gorm.DB, opts ...gen.DOOption) widget {
 
 	tableName := _widget.widgetDo.TableName()
 	_widget.ALL = field.NewAsterisk(tableName)
-	_widget.I = field.NewString(tableName, "i")
+	_widget.I = field.NewUint16(tableName, "i")
 	_widget.Name = field.NewString(tableName, "name")
+	_widget.DataSource = field.NewString(tableName, "data_source")
+	_widget.DataInfo = field.NewString(tableName, "data_info")
+	_widget.DataVisual = field.NewString(tableName, "data_visual")
+	_widget.Filters = field.NewField(tableName, "filters")
 	_widget.Config = field.NewField(tableName, "config")
 	_widget.Bookmarked = field.NewBool(tableName, "bookmarked")
 
@@ -42,8 +46,12 @@ type widget struct {
 	widgetDo widgetDo
 
 	ALL        field.Asterisk
-	I          field.String
+	I          field.Uint16
 	Name       field.String
+	DataSource field.String
+	DataInfo   field.String
+	DataVisual field.String
+	Filters    field.Field
 	Config     field.Field
 	Bookmarked field.Bool
 
@@ -62,8 +70,12 @@ func (w widget) As(alias string) *widget {
 
 func (w *widget) updateTableName(table string) *widget {
 	w.ALL = field.NewAsterisk(table)
-	w.I = field.NewString(table, "i")
+	w.I = field.NewUint16(table, "i")
 	w.Name = field.NewString(table, "name")
+	w.DataSource = field.NewString(table, "data_source")
+	w.DataInfo = field.NewString(table, "data_info")
+	w.DataVisual = field.NewString(table, "data_visual")
+	w.Filters = field.NewField(table, "filters")
 	w.Config = field.NewField(table, "config")
 	w.Bookmarked = field.NewBool(table, "bookmarked")
 
@@ -90,9 +102,13 @@ func (w *widget) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *widget) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 4)
+	w.fieldMap = make(map[string]field.Expr, 8)
 	w.fieldMap["i"] = w.I
 	w.fieldMap["name"] = w.Name
+	w.fieldMap["data_source"] = w.DataSource
+	w.fieldMap["data_info"] = w.DataInfo
+	w.fieldMap["data_visual"] = w.DataVisual
+	w.fieldMap["filters"] = w.Filters
 	w.fieldMap["config"] = w.Config
 	w.fieldMap["bookmarked"] = w.Bookmarked
 }
