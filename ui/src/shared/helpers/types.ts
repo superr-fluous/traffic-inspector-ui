@@ -7,3 +7,5 @@ export type Option<Val> = {
 	value: Val;
 	label: string;
 };
+
+export type PartialKeys<Source extends object, Keys extends keyof Source> = Omit<Source, Keys> & { [key in Keys]?: Source[key]}

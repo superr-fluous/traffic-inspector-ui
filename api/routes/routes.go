@@ -20,19 +20,21 @@ func SetupRoutes(engine *gin.Engine, db *gorm.DB) {
 			widgetRoutes.GET("/:id", h.Widget.Get)
 			widgetRoutes.PATCH("/:id", h.Widget.Update)
 			widgetRoutes.DELETE("/:id", h.Widget.Delete)
-			widgetRoutes.PATCH("/:id/bookmark/:state", h.Widget.Toggle)
+			widgetRoutes.PATCH("/:id/bookmark", h.Widget.Toggle)
 		}
+		
 		dashboardRoutes := api.Group("/dashboard")
 		{
-			dashboardRoutes.POST("/add", h.Dashboard.Add)
-			dashboardRoutes.DELETE("/delete", h.Dashboard.Delete)
-			dashboardRoutes.PATCH("/layout", h.Dashboard.Update)
+			dashboardRoutes.GET("/", h.Dashboard.Get)
+			dashboardRoutes.GET("/data/:id", h.Dashboard.GetData)
+			dashboardRoutes.POST("/preview", h.Dashboard.GetPreview)
 		}
-
+		
 		flowRoutes := api.Group("/flow")
 		{
 			flowRoutes.GET("/all", h.Flow.GetAll)
 			flowRoutes.GET("/", h.Flow.Get)
+			flowRoutes.POST("/generate", h.Flow.Generate)
 		}
 	}
 }

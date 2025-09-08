@@ -18,7 +18,7 @@ func Connect() *gorm.DB {
 
 	db, err := gorm.Open(postgres.Open(config.DSN), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
+			SingularTable: false,
 		},
 		Logger:      logger.Default.LogMode(logger.Info),
 		PrepareStmt: true, // This is fine for the main app's connection pool
@@ -41,16 +41,16 @@ func Connect() *gorm.DB {
 
 // NewGormWithTx creates a GORM instance from an existing SQL transaction.
 // This is the key to solving the 'invalid db' error.
-func NewGormWithTx(tx *sql.Tx) (*gorm.DB, error) {
+func NewGorm(d *sql.DB) (*gorm.DB, error) {
 	// For a transactional instance, we use a minimal config.
 	// We AVOID inheriting pool-level settings like PrepareStmt,
 	// as this conflicts with the state of the raw transaction.
 	return gorm.Open(postgres.New(postgres.Config{
-		Conn: tx,
+		Conn: d,
 	}), &gorm.Config{
 		// Only include essential, non-connection-specific settings.
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true,
+			SingularTable: false,
 		},
 		// Using a simple logger for migrations is good practice.
 		Logger: logger.Default.LogMode(logger.Warn),

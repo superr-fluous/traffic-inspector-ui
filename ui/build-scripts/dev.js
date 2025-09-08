@@ -161,13 +161,39 @@ server
 			return;
 		}
 
+		// TODO: port from variable + flag to stub or pipe
 		if (/^(\\|\/)api/.test(req.url)) {
-			res.writeHead(501, { "Content-Type": "application/json" });
-			res.end(
-				JSON.stringify({
-					detail: "/api is not available in local development mode",
-				})
-			);
+			const options = {
+				hostname: "localhost",
+				port: 8000,
+				path: req.url,
+				method: req.method,
+				headers: req.headers,
+			};
+
+			const proxyReq = http.request(options, (proxyRes) => {
+				// Pipe back the response headers and status
+				res.writeHead(proxyRes.statusCode, proxyRes.headers);
+				// Stream the data back to the client
+				proxyRes.pipe(res, { end: true });
+			});
+
+			// Handle errors
+			proxyReq.on("error", (err) => {
+				console.error("Proxy error:", err.message);
+				res.writeHead(502);
+				res.end("Bad Gateway");
+			});
+
+			// Stream the client request body to the target
+			req.pipe(proxyReq, { end: true });
+
+			// res.writeHead(501, { "Content-Type": "application/json" });
+			// res.end(
+			// 	JSON.stringify({
+			// 		detail: "/api is not available in local development mode",
+			// 	})
+			// );
 
 			return;
 		}

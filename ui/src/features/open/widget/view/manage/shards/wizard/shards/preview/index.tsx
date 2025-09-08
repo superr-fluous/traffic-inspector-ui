@@ -8,17 +8,19 @@ import Typography from "@mui/material/Typography";
 import { $helpers } from "@shared";
 
 import _helpers from "../../../../../../utilities";
+import type { GenericWidgetPreviewProps, Model } from "../../../../../../model";
 
 import type { Form } from "../form";
 
 import styles from "./styles.module.css";
 
 interface Props {
+	id: Model["i"];
 	className?: string;
 	values: Partial<Form>;
 }
 
-const Shard: FC<Props> = ({ values, className }) => {
+const Shard: FC<Props> = ({ values, className, id }) => {
 	const view = useRef<ReturnType<typeof _helpers.mappers.widgetVisual> | null>(null);
 	const [config, setConfig] = useState<Partial<Form>>();
 
@@ -27,7 +29,7 @@ const Shard: FC<Props> = ({ values, className }) => {
 		if (visual === null || visual === undefined) {
 			view.current = null;
 		} else {
-			view.current = memo(visual, (prev, current) => equal(prev.config, current.config));
+			view.current = memo(visual, (prev, current) => equal(prev, current));
 		}
 
 		setConfig(config);
@@ -42,7 +44,15 @@ const Shard: FC<Props> = ({ values, className }) => {
 			<Typography variant='baseXl'>Preview</Typography>
 			<div className={styles["widget-container"]}>
 				{view.current === null && <Typography variant='baseXl'>Configure widget</Typography>}
-				{view.current !== null && <view.current config={config} />}
+				{view.current !== null && (
+					<view.current
+						dataInfo={values.dataInfo!}
+						dataSource={values.dataSource!}
+						dataVisual={values.dataVisual!}
+						config={values.config!}
+						filters={values.filters!}
+					/>
+				)}
 			</div>
 		</Box>
 	);

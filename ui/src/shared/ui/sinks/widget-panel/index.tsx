@@ -11,10 +11,9 @@ const Grid = WidthProvider(GridLayout);
 
 interface Props {
 	layout: Layout[];
-	widgets: Array<Features["open"]["widget"]["default"]["i"]>;
 }
 
-const WidgetPanel: FC<Props> = ({ layout, widgets }) => {
+const WidgetPanel: FC<Props> = ({ layout }) => {
 	return (
 		<Grid
 			cols={4}
@@ -25,8 +24,8 @@ const WidgetPanel: FC<Props> = ({ layout, widgets }) => {
 			isDraggable={false}
 			style={{ position: "relative" }}
 		>
-			{widgets.map((id) => (
-				<$features.open.widget.view key={id} id={id} />
+			{layout.map((l) => (
+				<$features.open.widget.view.display key={l.i} id={l.i} />
 			))}
 		</Grid>
 	);

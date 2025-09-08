@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Handlers bundles all handler instances together.
 type Handlers struct {
 	Widget    *widgethandler.Handler
 	Flow      *flowhandler.Handler
@@ -16,12 +15,13 @@ type Handlers struct {
 	Health    *healthcheckhandler.Handler
 }
 
-// New creates and returns a new Handlers instance with all dependencies resolved.
 func New(db *gorm.DB) *Handlers {
+	// yeah... this is ugly
+	flowH := flowhandler.New(db)
 	return &Handlers{
 		Widget:    widgethandler.New(db),
-		Flow:      flowhandler.New(db),
-		Dashboard: dashboardhandler.New(db),
+		Flow:      flowH,
+		Dashboard: dashboardhandler.New(db, flowH),
 		Health:    healthcheckhandler.New(),
 	}
 }

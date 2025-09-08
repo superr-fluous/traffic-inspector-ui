@@ -27,5 +27,13 @@ export interface Filters {}
 
 // --- MISC ---
 export interface GenericWidgetViewProps {
+	i: Model['i']
+}
+
+export interface GenericWidgetPreviewProps {
+	dataSource: DataSource;
+	dataInfo: DataInfo;
+	dataVisual: DataVisual
 	config: Config;
+	filters: Filters;
 }

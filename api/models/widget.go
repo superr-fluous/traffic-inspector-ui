@@ -185,3 +185,12 @@ type ToggleBookmarkedParams struct {
 type DeleteWidgetParams struct {
 	ID string `path:"id"`
 }
+
+// GET preview
+type WidgetPreviewParams struct {
+	DataSource *WidgetDataSource `json:"dataSource,omitempty"`
+	DataVisual *WidgetDataVisual `json:"dataVisual,omitempty"`
+	DataInfo   *WidgetDataInfo   `json:"dataInfo,omitempty"`
+	Filters    *WidgetFilters    `json:"filters,omitempty"`
+	Config     *WidgetConfig     `json:"config,omitempty"`
+}

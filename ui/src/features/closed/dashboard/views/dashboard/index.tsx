@@ -2,58 +2,47 @@ import React, { useState } from "react";
 
 import type { FC } from "react";
 
-import { $ui } from "@shared";
+import { $hooks, $ui } from "@shared";
 
 import _endpoint from "../../endpoint";
+import type { Model } from "../../model";
 
 import Toolbar from "./widgets/toolbar";
 import ManagePanel from "./widgets/manage-panel";
+
 
 import styles from "../shared/styles.module.css";
 
 interface Props {}
 
 const Dashboard: FC<Props> = ({}) => {
-	const [showManagePanel, setShowManagePanel] = useState(false);
-	const [layout, { isLoading, error }, layoutAPI] = _endpoint.adapters.react.useLayout("dashboard");
+	const [layout, setLayout] = useState<Model>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<null | string>(null);
 
-	const confirmChanges = () => {
-		setShowManagePanel(false);
-	};
+	const doFetch = async () => {
+		setIsLoading(true)
+		const res = await _endpoint.query.fetch.self()
 
-	const widgets = layout.map((item) => ({
-		i: item.i,
-		active: item.active,
-		name: item.meta.name,
-		bookmarked: item.meta.bookmarked,
-	}));
-
-	const renderedWidgets = widgets.reduce<string[]>((_widgets, widget) => {
-		if (widget.active) {
-			_widgets.push(widget.i);
+		if (res.ok) {
+			setLayout(_endpoint.adapters.dto.incoming.self(res.data))
 		}
-		return _widgets;
-	}, []);
 
-	const inactiveWidgetsL = layout.length - widgets.length;
+		setIsLoading(false)
+	}
+
+	$hooks.useOnce(doFetch)
+
 	return (
 		<$ui.loader className={styles.wrapper} loading={isLoading} error={error}>
-			<ManagePanel
-				open={showManagePanel}
-				widgets={widgets}
-				onClose={() => setShowManagePanel(false)}
-				onConfirm={confirmChanges}
-				onDelete={layoutAPI.deleteItem}
-				onEnable={layoutAPI.toggleItem}
-				onReset={layoutAPI.reset}
-			/>
-			<Toolbar unassignedWidgetsNum={inactiveWidgetsL} onManageWidgets={() => setShowManagePanel(true)} />
+			<Toolbar />
 
 			<$ui.scrollable className={styles["grid-layout-wrapper"]}>
-				<$ui.sinks.widgetPanel layout={layout} widgets={renderedWidgets} />
+				<$ui.sinks.widgetPanel layout={layout} />
 			</$ui.scrollable>
 		</$ui.loader>
 	);
 };
 
 export default Dashboard;
+ 

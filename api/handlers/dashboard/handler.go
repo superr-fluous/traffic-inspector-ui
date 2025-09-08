@@ -1,9 +1,12 @@
-package flowhandler
+package dashboardhandler
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	flowhandler "github.com/koltiradw/TrafficInspector/api/handlers/flow"
 	handlerutils "github.com/koltiradw/TrafficInspector/api/handlers/utils"
 	"github.com/koltiradw/TrafficInspector/api/models"
 	"github.com/koltiradw/TrafficInspector/api/query"
@@ -11,105 +14,83 @@ import (
 )
 
 type Handler struct {
-	q *query.Query
+	q           *query.Query
+	flowHandler *flowhandler.Handler
 }
 
-func New(db *gorm.DB) *Handler {
+func New(db *gorm.DB, flowH *flowhandler.Handler) *Handler {
 	return &Handler{
-		q: query.Use(db),
+		q:           query.Use(db),
+		flowHandler: flowH,
 	}
 }
 
-type AddDeleteBody struct {
-	Id string `json:"i"`
-}
+func (h *Handler) Get(c *gin.Context) {
+	rows, err := h.q.Dashboard.WithContext(c.Request.Context()).Find()
 
-// add widget
-func (h *Handler) Add(c *gin.Context) {
-	var values AddDeleteBody
-
-	if err := c.ShouldBindJSON(&values); err != nil {
-		handlerutils.WriteErorrResponse(c, "Validation error", err.Error(), http.StatusBadRequest)
+	if err != nil {
+		handlerutils.WriteErorrResponse(c, "Database error", err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := h.q.Dashboard.WithContext(c).Create(&models.Dashboard{I: values.Id, Active: false})
+	c.JSON(http.StatusOK, rows)
+}
+
+func (h *Handler) GetPreview(c *gin.Context) {
+	var req models.WidgetPreviewParams
+
+	if err := c.BindJSON(&req); err != nil {
+		handlerutils.WriteErorrResponse(c, "Bad request", err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	source := req.DataSource
+
+	if source == nil {
+		handlerutils.WriteErorrResponse(c, "Invalid config", "Widget data source is not defined", http.StatusBadRequest)
+		return
+	}
+
+	switch *source {
+	case models.WidgetDataSourceFlows:
+		h.flowHandler.FetchWidgetPreview(&req, c)
+		return
+	default:
+		handlerutils.WriteErorrResponse(c, "Invalid config", fmt.Sprintf("Widget data source is unknown: %s", string(*source)), http.StatusBadRequest)
+	}
+}
+
+func (h *Handler) GetData(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 16)
+
+	if err != nil {
+		handlerutils.WriteErorrResponse(c, "Bad request", err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	rows, err := h.q.Widget.WithContext(c).Where(h.q.Widget.I.Eq(uint16(id))).Find()
 
 	if err != nil {
 		handlerutils.WriteErorrResponse(c, "Database error", err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	c.Status(http.StatusOK)
-}
+	widget := rows[0]
 
-// delete widget
-func (h *Handler) Delete(c *gin.Context) {
-	var values AddDeleteBody
+	// routing logic
+	source := widget.DataSource
 
-	if err := c.ShouldBindJSON(&values); err != nil {
-		handlerutils.WriteErorrResponse(c, "Validation error", err.Error(), http.StatusBadRequest)
+	if source == nil {
+		handlerutils.WriteErorrResponse(c, "Invalid config", "Widget data source is not defined", http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.q.Dashboard.WithContext(c).Where(h.q.Dashboard.I.Eq(values.Id)).Delete()
-
-	if err != nil {
-		handlerutils.WriteErorrResponse(c, "Database error", err.Error(), http.StatusInternalServerError)
+	switch *source {
+	case models.WidgetDataSourceFlows:
+		h.flowHandler.FetchWidgetData(widget, c)
 		return
+	default:
+		handlerutils.WriteErorrResponse(c, "Invalid config", fmt.Sprintf("Widget data source is unknown: %s", string(*source)), http.StatusBadRequest)
 	}
-
-	if res.RowsAffected == 0 {
-		handlerutils.WriteErorrResponse(c, "No widgets affected", "", http.StatusConflict)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
-type UpdateWidget struct {
-	I      string `json:"i" binding:"required"`
-	Active *bool  `json:"active"`
-	H      *int   `json:"h"`
-	W      *int   `json:"w"`
-	Y      *int   `json:"y"`
-	X      *int   `json:"x"`
-}
-
-type UpdateBodyStruct struct {
-	Widgets []*UpdateWidget `json:"widgets" minLength:"1" binding:"required"`
-}
-
-// bulkUpdateWidgets updates multiple widgets in one transaction
-func bulkUpdateWidgets(c *gin.Context, h *Handler, updates []*UpdateWidget) error {
-	return h.q.Transaction(func(tx *query.Query) error {
-
-		for _, u := range updates {
-			_, err := tx.Dashboard.WithContext(c).Where(tx.Dashboard.I.Eq(u.I)).Updates(u)
-			if err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-}
-
-// update widget layouts
-func (h *Handler) Update(c *gin.Context) {
-	var values UpdateBodyStruct
-
-	if err := c.ShouldBindJSON(&values); err != nil {
-		handlerutils.WriteErorrResponse(c, "Validation error", err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err := bulkUpdateWidgets(c, h, values.Widgets)
-
-	if err != nil {
-		handlerutils.WriteErorrResponse(c, "Database error", err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	c.Status(http.StatusOK)
 }

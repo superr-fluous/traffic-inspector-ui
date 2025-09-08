@@ -1,3 +1,4 @@
+import type { FC } from "react";
 import type { Defined, Undefined } from "@shared/helpers/types";
 
 // FLAW: circular imports, cant import $features here (?feature-sinks?, ?sinks/features?)
@@ -9,7 +10,7 @@ import $category from "../../category";
 import $protocol from "../../protocol";
 import $flow from "../../../closed/flow";
 
-import type { Config } from "../model";
+import type { Config, GenericWidgetPreviewProps, GenericWidgetViewProps, Model } from "../model";
 
 const widgetVisualMapper = {
 	asn: {
@@ -48,7 +49,7 @@ const widgetVisualMapper = {
 	},
 };
 
-const widgetVisual = (info: Undefined<Config["dataInfo"]>, visual: Undefined<Config["dataVisual"]>) => {
+const widgetVisual = (info: Undefined<Model['dataInfo']>, visual: Undefined<Model["dataVisual"]>): FC<GenericWidgetViewProps | GenericWidgetPreviewProps> | null => {
 	if (info === undefined || visual === undefined) {
 		return null;
 	}

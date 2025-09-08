@@ -3,35 +3,28 @@ import type { FC } from "react";
 import type { MayHaveLabel } from "@nivo/pie";
 
 import { $hooks, $ui } from "@shared";
-import { ComputedDatum } from "@nivo/bar";
+import { endpoint as dashboardEndpoint } from "@features/closed/dashboard";
+import { GenericWidgetPreviewProps, GenericWidgetViewProps } from "@features/open/widget/model";
 
-const mock = [
-	{
-		label: "HTTP",
-		value: 13211,
-		id: "http",
-	},
-	{
-		label: "DNS",
-		value: 2121,
-		id: "dns",
-	},
-	{
-		label: "ARR",
-		value: 121312,
-		id: "arp",
-	},
-];
-
-const Pie: FC = ({}) => {
-	// const { data, isLoading, error } = $hooks.useFetch<MayHaveLabel[], MayHaveLabel[]>("dashboard/proto", [], {
-	// 	interval: 30000,
-	// 	defaultValue: [],
-	// });
+const Pie: FC<GenericWidgetViewProps | GenericWidgetPreviewProps> = (props) => {
+	const { data, isLoading, error } = $hooks.useFetch(
+		() => {
+			if ("i" in props) {
+				return dashboardEndpoint.fetch.data(props.i);
+			} else {
+				return dashboardEndpoint.fetch.preview(props);
+			}
+		},
+		[],
+		{
+			interval: 30000,
+			defaultValue: [],
+		}
+	);
 
 	return (
-		<$ui.loader loading={false} error={null} size='xl'>
-			<$ui.charts.pie data={mock} />
+		<$ui.loader loading={isLoading} error={error} size='xl'>
+			<$ui.charts.pie data={data as MayHaveLabel[]} />
 		</$ui.loader>
 	);
 };

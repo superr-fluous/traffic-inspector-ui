@@ -17,7 +17,7 @@ interface PromiseHandlers {
 }
 
 const View = () => {
-	const [editID, setEditID] = useState<Model["i"] | null>("1");
+	const [editID, setEditID] = useState<Model["i"] | null>(null);
 	const editPromise = useRef<PromiseHandlers>(null);
 
 	const doDelete = async (i: Model["i"]) => {
@@ -43,6 +43,11 @@ const View = () => {
 		return doDelete(id);
 	};
 
+	const onToggle: ShardsProps["list"]['actionHandlers']['toggle'] = async (id) => {
+		const res = await _endpoint.save.toggle(id)
+		return res.ok
+	}
+
 	const onAdd: ShardsProps["list"]["actionHandlers"]["add"] = async () => {
 		const res = await _endpoint.create.self();
 
@@ -60,6 +65,7 @@ const View = () => {
 			edit: onEdit,
 			delete: onDelete,
 			add: onAdd,
+			toggle: onToggle,
 		}),
 		[]
 	);

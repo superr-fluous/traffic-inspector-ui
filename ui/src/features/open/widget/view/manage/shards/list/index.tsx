@@ -13,12 +13,14 @@ import { $hooks, $ui } from "@shared";
 
 import _endpoint from "../../../../endpoint";
 import type { Model } from "../../../../model";
+import { Switch } from "@mui/material";
 
 export interface Props {
 	actionHandlers: {
 		add: () => Promise<boolean>;
 		edit: (id: Model["i"]) => Promise<boolean>;
 		delete: (id: Model["i"]) => Promise<boolean>;
+		toggle: (id: Model["i"]) => Promise<boolean>;
 	};
 }
 
@@ -43,8 +45,21 @@ const execAction = async (cfg: ExecActionParams) => {
 	}
 };
 
+const mock: Model[] = [
+	{
+		'i': "1",
+		"name": "Default widget",
+		"bookmarked": false,
+		"dataInfo": "country",
+		"dataSource": "flows",
+		"dataVisual": "line",
+		"filters": {},
+		"config": {},
+	}
+]
+
 const View: FC<Props> = ({ actionHandlers }) => {
-	const [rows, setRows] = useState<Model[]>([]);
+	const [rows, setRows] = useState<Model[]>(mock);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +74,7 @@ const View: FC<Props> = ({ actionHandlers }) => {
 		setIsLoading(false);
 	};
 
-	const edit = (id: Model["i"]) => {
+	const editWidget = (id: Model["i"]) => {
 		execAction({ cb: actionHandlers.edit, cbArgs: [id], successCb: doFetch });
 	};
 
@@ -70,6 +85,10 @@ const View: FC<Props> = ({ actionHandlers }) => {
 	const addWidget = () => {
 		execAction({ cb: actionHandlers.add, cbArgs: [], successCb: doFetch });
 	};
+
+	const toggleWidget = (id: Model["i"]) => {
+		execAction({ cb: actionHandlers.toggle, cbArgs: [id], successCb: doFetch })
+	}
 
 	$hooks.useOnce(doFetch);
 
@@ -84,6 +103,7 @@ const View: FC<Props> = ({ actionHandlers }) => {
 					<Table sx={{ minWidth: 650 }} aria-label='Existing widgets table'>
 						<TableHead>
 							<TableRow>
+								<TableCell align="left">Enabled</TableCell>
 								<TableCell>Name</TableCell>
 								<TableCell align='right'>Source</TableCell>
 								<TableCell align='right'>Type</TableCell>
@@ -95,9 +115,15 @@ const View: FC<Props> = ({ actionHandlers }) => {
 								<TableRow
 									hover={false}
 									key={row.i}
-									sx={{ "&:last-child td, &:last-child th": { border: 0 }, width: "100%" }}
+									sx={{
+										"&:last-child td, &:last-child th": { border: 0 },
+										width: "100%",
+									}}
 								>
-									<TableCell color='info' component='th' scope='row'>
+									<TableCell>
+										<Switch checked={row.bookmarked} onChange={() => toggleWidget(row.i)} />
+									</TableCell>
+									<TableCell align='right'color='info' component='th' scope='row'>
 										{row.name}
 									</TableCell>
 									<TableCell align='right' style={{ textTransform: "capitalize" }}>
@@ -107,7 +133,7 @@ const View: FC<Props> = ({ actionHandlers }) => {
 										{row.dataVisual}
 									</TableCell>
 									<TableCell align='right'>
-										<Button variant='text' color='primary' onClick={() => edit(row.i)}>
+										<Button variant='text' color='primary' onClick={() => editWidget(row.i)}>
 											Edit
 										</Button>
 										<Button

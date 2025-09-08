@@ -41,6 +41,7 @@ COPY --from=build --chown=10001:10001 /app/healthchecker /app/healthchecker
 # 5. Copy the migrations directory (if you are NOT embedding them).
 # If you are embedding migrations into the binary, you can delete this line.
 COPY --from=build --chown=10001:10001 /app/db/migrations /app/migrations
+COPY --from=build --chown=10001:10001 /app/sql /app/sql
 
 # 6. Set the main application binary as the entrypoint.
 # ENTRYPOINT ["./backend"]

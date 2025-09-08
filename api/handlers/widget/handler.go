@@ -10,6 +10,7 @@ import (
 	"github.com/koltiradw/TrafficInspector/api/query"
 	"github.com/koltiradw/TrafficInspector/api/utils"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Handler struct {
@@ -112,7 +113,7 @@ func (h *Handler) Update(c *gin.Context) {
 	widget := models.Widget{I: uint16(id)}
 	utils.ApplyNonNilFields(&widget, &req)
 
-	res, err := h.q.Widget.WithContext(c).Where(h.q.Widget.I.Eq(widget.I)).Updates(&widget)
+	res, err := h.q.Widget.WithContext(c.Request.Context()).Where(h.q.Widget.I.Eq(widget.I)).Updates(&widget)
 
 	if err != nil {
 		handlerutils.WriteErorrResponse(c, "Database error", err.Error(), http.StatusInternalServerError)
@@ -127,7 +128,7 @@ func (h *Handler) Update(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-// toggle widget
+// Toggle toggles widget's bookmarked state
 func (h *Handler) Toggle(c *gin.Context) {
 	idStr := c.Param("id")
 
@@ -138,14 +139,46 @@ func (h *Handler) Toggle(c *gin.Context) {
 		return
 	}
 
-	state, err := handlerutils.StrToBool(c.Param("state"))
+	id16 := uint16(id)
 
-	if err != nil {
-		handlerutils.WriteErorrResponse(c, "Validation error", err.Error(), http.StatusBadRequest)
-		return
-	}
+	// transaction
+	err = h.q.WithContext(c.Request.Context()).Widget.UnderlyingDB().Transaction(func(tx *gorm.DB) error {
+		newValue, err := h.q.Widget.ToggleTx(c, tx, id16)
 
-	_, err = h.q.Widget.WithContext(c).Where(h.q.Widget.I.Eq(uint16(id))).Update(h.q.Widget.Bookmarked, state)
+		if err != nil {
+			return err
+		}
+
+		if newValue {
+			dashboard := models.Dashboard{I: id16, W: 4, H: 4}
+			dashboards, err := h.q.WithContext(c.Request.Context()).Dashboard.Find()
+
+			if err != nil {
+				return err
+			}
+
+			handlerutils.DashboardPlaceNewWidget(dashboards, &dashboard)
+			dashboards = append(dashboards, &dashboard)
+
+			// upsert
+			err = h.q.Dashboard.WithContext(c.Request.Context()).
+				Clauses(clause.OnConflict{
+					UpdateAll: true,
+				}).
+				Create(dashboards...)
+
+			if err != nil {
+				return err
+			}
+
+			// err = h.q.WithContext(c.Request.Context()).Dashboard.Create(&dashboard)
+		} else {
+			// remove from dashboard
+			_, err = h.q.WithContext(c.Request.Context()).Dashboard.Where(h.q.Dashboard.I.Eq(id16)).Delete()
+		}
+
+		return err
+	})
 
 	if err != nil {
 		handlerutils.WriteErorrResponse(c, "Database Error", err.Error(), http.StatusInternalServerError)

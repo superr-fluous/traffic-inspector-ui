@@ -1,4 +1,5 @@
-import { Layout as ReactGridLayout } from "react-grid-layout";
+import type { Layout as ReactGridLayout } from "react-grid-layout";
+import type { PartialKeys } from "@shared/helpers/types";
 
 export interface Layout {
 	i: ReactGridLayout["i"];
@@ -6,13 +7,12 @@ export interface Layout {
 	h: ReactGridLayout["h"];
 	x: ReactGridLayout["x"];
 	y: ReactGridLayout["y"];
-	active: boolean;
-	meta: {
-		name: string;
-		bookmarked: boolean;
-	};
+	name: string;
 }
 
 export type Model = Layout[];
 
 export type ViewList = "statistics" | "dashboard";
+
+type LayoutFetched = PartialKeys<Layout, "x" | "y">;
+export type ModelFetched = LayoutFetched[];

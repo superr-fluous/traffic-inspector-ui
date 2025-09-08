@@ -26,6 +26,22 @@ func runMigrations(sqlDb *sql.DB) {
 	}
 }
 
+// maybe need to refactor file arch: define primitives (services): flow, dashboard, widgets.
+// define data providers (only flow for now) and api handlers
+// reuse service primitives for providers and api handlers
+// like `type FlowService struct { q *query.Query }`
+// `type Handler struct { svc *FlowService }`
+// `type FlowProvider struct { svc *FlowService }`
+// `type ProviderRegistry struct { providers map[string]DataProvider }`
+// `type DataProvider interface { Fetch(any...) any...}`
+// `
+//
+//	func (r *ProviderRegistry) Register(name string, p DataProvider)
+//	func (r *ProviderRegistry) Get(name string) (DataProvider, bool)
+//
+// `
+
+// this is needed to resolve the issue of calling a handler from handler (currently Dashboard handlers simply consume Flow handlers)
 func main() {
 	db := db.Connect()
 	sqlDb, err := db.DB()

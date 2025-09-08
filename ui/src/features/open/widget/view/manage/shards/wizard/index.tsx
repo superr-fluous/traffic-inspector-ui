@@ -87,7 +87,7 @@ const Shard: FC<Props> = ({ id, onConfirmConfiguration, onBack }) => {
 						onValueChange={setFormValue}
 						className={styles["wizard-form"]}
 					/>
-					<_shards.preview values={form} className={styles["wizard-preview"]} />
+					<_shards.preview id={id!} values={form} className={styles["wizard-preview"]} />
 				</>
 			)}
 		</Box>

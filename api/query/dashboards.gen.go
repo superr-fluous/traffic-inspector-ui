@@ -28,12 +28,17 @@ func newDashboard(db *gorm.DB, opts ...gen.DOOption) dashboard {
 
 	tableName := _dashboard.dashboardDo.TableName()
 	_dashboard.ALL = field.NewAsterisk(tableName)
-	_dashboard.I = field.NewString(tableName, "i")
+	_dashboard.I = field.NewUint16(tableName, "i")
 	_dashboard.X = field.NewInt(tableName, "x")
 	_dashboard.Y = field.NewInt(tableName, "y")
 	_dashboard.W = field.NewInt(tableName, "w")
 	_dashboard.H = field.NewInt(tableName, "h")
-	_dashboard.Active = field.NewBool(tableName, "active")
+	_dashboard.Name = field.NewString(tableName, "name")
+	_dashboard.Widget = dashboardHasOneWidget{
+		db: db.Session(&gorm.Session{}),
+
+		RelationField: field.NewRelation("Widget", "models.Widget"),
+	}
 
 	_dashboard.fillFieldMap()
 
@@ -44,12 +49,13 @@ type dashboard struct {
 	dashboardDo dashboardDo
 
 	ALL    field.Asterisk
-	I      field.String
+	I      field.Uint16
 	X      field.Int
 	Y      field.Int
 	W      field.Int
 	H      field.Int
-	Active field.Bool
+	Name   field.String
+	Widget dashboardHasOneWidget
 
 	fieldMap map[string]field.Expr
 }
@@ -66,12 +72,12 @@ func (d dashboard) As(alias string) *dashboard {
 
 func (d *dashboard) updateTableName(table string) *dashboard {
 	d.ALL = field.NewAsterisk(table)
-	d.I = field.NewString(table, "i")
+	d.I = field.NewUint16(table, "i")
 	d.X = field.NewInt(table, "x")
 	d.Y = field.NewInt(table, "y")
 	d.W = field.NewInt(table, "w")
 	d.H = field.NewInt(table, "h")
-	d.Active = field.NewBool(table, "active")
+	d.Name = field.NewString(table, "name")
 
 	d.fillFieldMap()
 
@@ -98,23 +104,108 @@ func (d *dashboard) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (d *dashboard) fillFieldMap() {
-	d.fieldMap = make(map[string]field.Expr, 6)
+	d.fieldMap = make(map[string]field.Expr, 7)
 	d.fieldMap["i"] = d.I
 	d.fieldMap["x"] = d.X
 	d.fieldMap["y"] = d.Y
 	d.fieldMap["w"] = d.W
 	d.fieldMap["h"] = d.H
-	d.fieldMap["active"] = d.Active
+	d.fieldMap["name"] = d.Name
+
 }
 
 func (d dashboard) clone(db *gorm.DB) dashboard {
 	d.dashboardDo.ReplaceConnPool(db.Statement.ConnPool)
+	d.Widget.db = db.Session(&gorm.Session{Initialized: true})
+	d.Widget.db.Statement.ConnPool = db.Statement.ConnPool
 	return d
 }
 
 func (d dashboard) replaceDB(db *gorm.DB) dashboard {
 	d.dashboardDo.ReplaceDB(db)
+	d.Widget.db = db.Session(&gorm.Session{})
 	return d
+}
+
+type dashboardHasOneWidget struct {
+	db *gorm.DB
+
+	field.RelationField
+}
+
+func (a dashboardHasOneWidget) Where(conds ...field.Expr) *dashboardHasOneWidget {
+	if len(conds) == 0 {
+		return &a
+	}
+
+	exprs := make([]clause.Expression, 0, len(conds))
+	for _, cond := range conds {
+		exprs = append(exprs, cond.BeCond().(clause.Expression))
+	}
+	a.db = a.db.Clauses(clause.Where{Exprs: exprs})
+	return &a
+}
+
+func (a dashboardHasOneWidget) WithContext(ctx context.Context) *dashboardHasOneWidget {
+	a.db = a.db.WithContext(ctx)
+	return &a
+}
+
+func (a dashboardHasOneWidget) Session(session *gorm.Session) *dashboardHasOneWidget {
+	a.db = a.db.Session(session)
+	return &a
+}
+
+func (a dashboardHasOneWidget) Model(m *models.Dashboard) *dashboardHasOneWidgetTx {
+	return &dashboardHasOneWidgetTx{a.db.Model(m).Association(a.Name())}
+}
+
+func (a dashboardHasOneWidget) Unscoped() *dashboardHasOneWidget {
+	a.db = a.db.Unscoped()
+	return &a
+}
+
+type dashboardHasOneWidgetTx struct{ tx *gorm.Association }
+
+func (a dashboardHasOneWidgetTx) Find() (result *models.Widget, err error) {
+	return result, a.tx.Find(&result)
+}
+
+func (a dashboardHasOneWidgetTx) Append(values ...*models.Widget) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Append(targetValues...)
+}
+
+func (a dashboardHasOneWidgetTx) Replace(values ...*models.Widget) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Replace(targetValues...)
+}
+
+func (a dashboardHasOneWidgetTx) Delete(values ...*models.Widget) (err error) {
+	targetValues := make([]interface{}, len(values))
+	for i, v := range values {
+		targetValues[i] = v
+	}
+	return a.tx.Delete(targetValues...)
+}
+
+func (a dashboardHasOneWidgetTx) Clear() error {
+	return a.tx.Clear()
+}
+
+func (a dashboardHasOneWidgetTx) Count() int64 {
+	return a.tx.Count()
+}
+
+func (a dashboardHasOneWidgetTx) Unscoped() *dashboardHasOneWidgetTx {
+	a.tx = a.tx.Unscoped()
+	return &a
 }
 
 type dashboardDo struct{ gen.DO }
